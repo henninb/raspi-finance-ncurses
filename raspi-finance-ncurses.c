@@ -38,7 +38,6 @@ static WINDOW *win_body = NULL;
 static WINDOW *win_form = NULL;
 static WINDOW *win_main_menu = NULL;
 
-
 void show_main_screen();
 void show_transaction_insert_screen();
 
@@ -158,7 +157,6 @@ int jsonPrintFieldValues() {
     printw("%s", payload);
     printw("-- %d", result);
     return result;
-
 }
 
 static void driver(int ch) {
@@ -178,6 +176,9 @@ static void driver(int ch) {
 			pos_form_cursor(form);
 			break;
 
+        case 353: //shift tab
+            form_driver(form, REQ_PREV_FIELD);
+            break;
         case KEY_F(12):
             setDefaultValues();
             break;
@@ -244,7 +245,7 @@ void cleanup_transaction_screen() {
 	delwin(win_form);
 	delwin(win_body);
 	endwin();
-
+    win_form = NULL;
 }
 
 void show_transaction_insert_screen() {
@@ -389,7 +390,8 @@ void show_main_screen() {
     curs_set(0); // hide the default screen cursor.
 
        // get the input
-    while(( ch = wgetch(win_main_menu)) != 'q') {
+    ch = wgetch(win_main_menu);
+    while( ch != 'q' && ch != 27 ) {
                 // right pad with spaces to make the items appear with even width.
           //  sprintf(item, "%-7s",  list[i]);
             snprintf(item, sizeof(item), "%s",  list[i]);
@@ -398,9 +400,9 @@ void show_main_screen() {
             switch( ch ) {
                 case KEY_UP:
                 case 'k':
-                            i--;
-                            i = ( i < 0 ) ? (MAIN_MENU_LIST_SIZE-1) : i;
-                            break;
+                    i--;
+                    i = ( i < 0 ) ? (MAIN_MENU_LIST_SIZE-1) : i;
+                    break;
                 case '\n':
                     if( i == 0 ) {
                         delwin(win_main_menu);
@@ -408,11 +410,14 @@ void show_main_screen() {
                         show_transaction_insert_screen();
                     }
                 break;
+                case -1:
+                  exit(1);
+                break;
                 case KEY_DOWN:
                 case 'j':
-                            i++;
-                            i = ( i>(MAIN_MENU_LIST_SIZE-1) ) ? 0 : i;
-                            break;
+                    i++;
+                    i = ( i>(MAIN_MENU_LIST_SIZE-1) ) ? 0 : i;
+                    break;
             }
             // now highlight the next item in the list.
             wattron(win_main_menu, A_STANDOUT);
@@ -420,11 +425,23 @@ void show_main_screen() {
             //sprintf(item, "%-7s",  list[i]);
             snprintf(item, sizeof(item), "%s",  list[i]);
             mvwprintw(win_main_menu, i+1, 2, "%s", item);
-            wattroff(win_main_menu, A_STANDOUT );
+            wattroff(win_main_menu, A_STANDOUT);
+
+
+            if( win_main_menu == NULL ) {
+            }
+            ch = wgetch(win_main_menu);
+            /* printf("ch = '%d\n", ch); */
+            /* sleep(1); */
     }
 
+    if( ch == -1 ) {
+      printf("exited application\n");
+      exit(0);
+    }
     delwin(win_main_menu);
     endwin();
+    win_main_menu = NULL;
 }
 
 int main(int arg, char *argv[]) {
