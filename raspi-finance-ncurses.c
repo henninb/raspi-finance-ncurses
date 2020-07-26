@@ -66,6 +66,7 @@ void setDefaultValues() {
     char today_string[20] = {0};
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
+    char list[50][20] = {"chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian" };
 
     //strftime(today_string, sizeof(today_string)-1, "%m/%d/%Y", t);
     strftime(today_string, sizeof(today_string)-1, "%Y-%m-%d", t);
