@@ -263,6 +263,7 @@ void show_transaction_insert_screen() {
 	win_form = derwin(win_body, 20, 78, 3, 1);
 	assert(win_form != NULL);
 	box(win_form, 0, 0);
+    curs_set(1);
 	mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F12 to clear");
 
 	fields[TRANSACTION_DATE_IDX * 2] = new_field(1, label_length, TRANSACTION_DATE_IDX * 2, 0, 0, 0);
@@ -328,32 +329,10 @@ void show_transaction_insert_screen() {
 	wrefresh(win_body);
 	wrefresh(win_form);
 
-	/* while ((ch = getch()) != KEY_F(1)) { */
-	while ((ch = getch()) != 27) { //escape = 27
+	while ((ch = wgetch(win_body)) != 27) { //escape = 27
 		driver(ch);
     }
 
-//	unpost_form(form);
-//	free_form(form);
-//	free_field(fields[TRANSACTION_DATE_IDX * 2]);
-//	free_field(fields[TRANSACTION_DATE_IDX * 2 + 1]);
-//	free_field(fields[DESCRIPTION_IDX * 2]);
-//	free_field(fields[DESCRIPTION_IDX * 2 + 1]);
-//	free_field(fields[CATEGORY_IDX * 2]);
-//	free_field(fields[CATEGORY_IDX * 2 + 1]);
-//	free_field(fields[AMOUNT_IDX * 2]);
-//	free_field(fields[AMOUNT_IDX * 2 + 1]);
-//	free_field(fields[CLEARED_IDX * 2]);
-//	free_field(fields[CLEARED_IDX * 2 + 1]);
-//	free_field(fields[NOTES_IDX * 2]);
-//	free_field(fields[NOTES_IDX * 2 + 1]);
-//	free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2]);
-//	free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]);
-//    free_field(fields[ACCOUNT_TYPE_IDX * 2]);
-//    free_field(fields[ACCOUNT_TYPE_IDX * 2 + 1]);
-//	delwin(win_form);
-//	delwin(win_body);
-//	endwin();
   cleanup_transaction_screen();
   show_main_screen();
 }
@@ -361,7 +340,6 @@ void show_transaction_insert_screen() {
 
 
 void show_main_screen() {
-
     //int list_size = 6;
     char list[MAIN_MENU_LIST_SIZE][12] = { "transaction", "empty", "empty", "empty", "empty", "quit" };
     char item[12] = {0};
@@ -369,75 +347,75 @@ void show_main_screen() {
 
     initscr(); // initialize Ncurses
     win_main_menu = newwin( 10, 15, 1, 1 ); // create a new window
+    assert(win_main_menu != NULL);
     box(win_main_menu, 0, 0); // sets default borders for the window
 
 // now print all the menu items and highlight the first one
     for( i = 0; i< MAIN_MENU_LIST_SIZE; i++ ) {
         if( i == 0 ) {
-            wattron(win_main_menu, A_STANDOUT ); // highlights the first item.
+            wattron(win_main_menu, A_STANDOUT); // highlights the first item.
         } else {
-            wattroff(win_main_menu, A_STANDOUT );
+            wattroff(win_main_menu, A_STANDOUT);
         }
-        snprintf(item, sizeof(item), "%s",  list[i]);
+        snprintf(item, sizeof(item), "%s", list[i]);
         mvwprintw(win_main_menu, i+1, 2, "%s", item);
     }
 
     wrefresh(win_main_menu); // update the terminal screen
+    if( win_main_menu == NULL ) {
+      printf("win_main_menu is null\n");
+    }
 
     i = 0;
     noecho(); // disable echoing of characters on the screen
     keypad(win_main_menu, TRUE); // enable keyboard input for the window.
     curs_set(0); // hide the default screen cursor.
 
-       // get the input
     ch = wgetch(win_main_menu);
-    while( ch != 'q' && ch != 27 ) {
-                // right pad with spaces to make the items appear with even width.
-          //  sprintf(item, "%-7s",  list[i]);
-            snprintf(item, sizeof(item), "%s",  list[i]);
-            mvwprintw(win_main_menu, i+1, 2, "%s", item );
-              // use a variable to increment or decrement the value based on the input.
-            switch( ch ) {
-                case KEY_UP:
-                case 'k':
-                    i--;
-                    i = ( i < 0 ) ? (MAIN_MENU_LIST_SIZE-1) : i;
-                    break;
-                case '\n':
-                    if( i == 0 ) {
-                        delwin(win_main_menu);
-                        endwin();
-                        show_transaction_insert_screen();
-                    }
+    while( ch != 27 ) {
+        snprintf(item, sizeof(item), "%s",  list[i]);
+        mvwprintw(win_main_menu, i+1, 2, "%s", item );
+        switch( ch ) {
+            case KEY_UP:
+            case 'k':
+                i--;
+                i = ( i < 0 ) ? (MAIN_MENU_LIST_SIZE-1) : i;
                 break;
-                case -1:
-                  exit(1);
+            case '\n':
+                if( i == 0 ) {
+                    delwin(win_main_menu);
+                    endwin();
+                    show_transaction_insert_screen();
+                }
+            break;
+            case -1:
+              exit(1);
+            break;
+            case KEY_DOWN:
+            case 'j':
+                i++;
+                i = ( i>(MAIN_MENU_LIST_SIZE-1) ) ? 0 : i;
                 break;
-                case KEY_DOWN:
-                case 'j':
-                    i++;
-                    i = ( i>(MAIN_MENU_LIST_SIZE-1) ) ? 0 : i;
-                    break;
-            }
-            // now highlight the next item in the list.
-            wattron(win_main_menu, A_STANDOUT);
+        }
+        // now highlight the next item in the list.
+        wattron(win_main_menu, A_STANDOUT);
 
-            //sprintf(item, "%-7s",  list[i]);
-            snprintf(item, sizeof(item), "%s",  list[i]);
-            mvwprintw(win_main_menu, i+1, 2, "%s", item);
-            wattroff(win_main_menu, A_STANDOUT);
+        //sprintf(item, "%-7s",  list[i]);
+        snprintf(item, sizeof(item), "%s",  list[i]);
+        mvwprintw(win_main_menu, i+1, 2, "%s", item);
+        wattroff(win_main_menu, A_STANDOUT);
 
 
-            if( win_main_menu == NULL ) {
-            }
-            ch = wgetch(win_main_menu);
-            /* printf("ch = '%d\n", ch); */
-            /* sleep(1); */
+        if( win_main_menu == NULL ) {
+          printf("because the window pointer is null\n");
+          exit(2);
+        }
+        ch = wgetch(win_main_menu);
     }
 
     if( ch == -1 ) {
       printf("exited application\n");
-      exit(0);
+      exit(1);
     }
     delwin(win_main_menu);
     endwin();
