@@ -387,6 +387,12 @@ void show_main_screen() {
                     endwin();
                     show_transaction_insert_screen();
                 }
+
+                if( i == 5 ) {
+                  delwin(win_main_menu);
+                  endwin();
+                  exit(0);
+                }
             break;
             case -1:
               exit(1);
