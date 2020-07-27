@@ -44,24 +44,24 @@ void show_main_screen();
 void show_transaction_insert_screen();
 
 char * trim_whitespaces( char *str ) {
-	char *end = NULL;
+    char *end = NULL;
 
-	while(isspace(*str)) {
-		str++;
-	}
-
-	if(*str == 0) {
-		return str;
+    while(isspace(*str)) {
+        str++;
     }
 
-	end = str + strnlen(str, 128) - 1;
-	while(end > str && isspace(*end)) {
-		end--;
-	}
+    if(*str == 0) {
+        return str;
+    }
 
-	*(end+1) = '\0';
+    end = str + strnlen(str, 128) - 1;
+    while(end > str && isspace(*end)) {
+      end--;
+    }
 
-	return str;
+    *(end+1) = '\0';
+
+    return str;
 }
 
 void setDefaultValues() {
@@ -72,14 +72,14 @@ void setDefaultValues() {
     //strftime(today_string, sizeof(today_string)-1, "%m/%d/%Y", t);
     strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", t);
 
-	set_field_buffer(fields[TRANSACTION_DATE_IDX * 2], 0, TRANSACTION_DATE);
-	set_field_buffer(fields[TRANSACTION_DATE_IDX * 2 + 1], 0, today_string);
-	set_field_buffer(fields[DESCRIPTION_IDX * 2], 0, DESCRIPTION);
-	set_field_buffer(fields[DESCRIPTION_IDX * 2 + 1], 0, "");
-	set_field_buffer(fields[CATEGORY_IDX * 2], 0, CATEGORY);
-	set_field_buffer(fields[CATEGORY_IDX * 2 + 1], 0, "");
-	set_field_buffer(fields[AMOUNT_IDX * 2], 0, AMOUNT);
-	set_field_buffer(fields[AMOUNT_IDX * 2 + 1], 0, "0.00");
+    set_field_buffer(fields[TRANSACTION_DATE_IDX * 2], 0, TRANSACTION_DATE);
+    set_field_buffer(fields[TRANSACTION_DATE_IDX * 2 + 1], 0, today_string);
+    set_field_buffer(fields[DESCRIPTION_IDX * 2], 0, DESCRIPTION);
+    set_field_buffer(fields[DESCRIPTION_IDX * 2 + 1], 0, "");
+    set_field_buffer(fields[CATEGORY_IDX * 2], 0, CATEGORY);
+    set_field_buffer(fields[CATEGORY_IDX * 2 + 1], 0, "");
+    set_field_buffer(fields[AMOUNT_IDX * 2], 0, AMOUNT);
+    set_field_buffer(fields[AMOUNT_IDX * 2 + 1], 0, "0.00");
     set_field_buffer(fields[CLEARED_IDX * 2], 0, CLEARED);
     set_field_buffer(fields[CLEARED_IDX * 2 + 1], 0, "0");
     set_field_buffer(fields[NOTES_IDX * 2], 0, NOTES);
@@ -149,10 +149,10 @@ int jsonPrintFieldValues() {
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", CLEARED, extractField(fields[CLEARED_IDX * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", NOTES, extractField(fields[NOTES_IDX * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, extractField(fields[ACCOUNT_TYPE_IDX * 2 + 1]));
-	snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extractField(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]));
-	snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_ADDED, (unsigned long)time(NULL) * 1000);
-	snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_UPDATED, (unsigned long)time(NULL) * 1000);
-	snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extractField(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_ADDED, (unsigned long)time(NULL) * 1000);
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_UPDATED, (unsigned long)time(NULL) * 1000);
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
     snprintf(payload + strlen(payload), sizeof(payload), "}");
     int result = curl_post_call(payload);
     //wclear(win_body);
@@ -164,29 +164,29 @@ int jsonPrintFieldValues() {
 static void driver(int ch) {
     char account_list[50][20] = {"chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian" };
 
-	switch (ch) {
-		case KEY_F(4):
-		   set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
-		   set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[--account_list_index % 9]);
-		break;
+    switch (ch) {
+        case KEY_F(4):
+           set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
+           set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[--account_list_index % 9]);
+        break;
         case KEY_F(5):
            set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
            set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[++account_list_index % 9]);
         break;
-		case KEY_F(2):
-			// Or the current field buffer won't be sync with what is displayed
-			form_driver(form, REQ_NEXT_FIELD);
-			form_driver(form, REQ_PREV_FIELD);
-			move(LINES-3, 2);
+        case KEY_F(2):
+            // Or the current field buffer won't be sync with what is displayed
+            form_driver(form, REQ_NEXT_FIELD);
+            form_driver(form, REQ_PREV_FIELD);
+            move(LINES-3, 2);
 
             int result = jsonPrintFieldValues();
             if( result == 0 ) {
-			  setDefaultValues();
-			}
+              setDefaultValues();
+            }
 
-			refresh();
-			pos_form_cursor(form);
-			break;
+            refresh();
+            pos_form_cursor(form);
+            break;
 
         case 353: //shift tab
             form_driver(form, REQ_PREV_FIELD);
@@ -194,94 +194,94 @@ static void driver(int ch) {
         case KEY_F(12):
             setDefaultValues();
             break;
-		case KEY_DOWN:
-			form_driver(form, REQ_NEXT_FIELD);
-			form_driver(form, REQ_END_LINE);
-			break;
+        case KEY_DOWN:
+            form_driver(form, REQ_NEXT_FIELD);
+            form_driver(form, REQ_END_LINE);
+            break;
         case KEY_STAB:
         case '\t':
         case '\n':
-			form_driver(form, REQ_NEXT_FIELD);
+            form_driver(form, REQ_NEXT_FIELD);
             break;
-		case KEY_UP:
-			form_driver(form, REQ_PREV_FIELD);
-			form_driver(form, REQ_END_LINE);
-			break;
+        case KEY_UP:
+            form_driver(form, REQ_PREV_FIELD);
+            form_driver(form, REQ_END_LINE);
+            break;
 
-		case KEY_LEFT:
-			form_driver(form, REQ_PREV_CHAR);
-			break;
+        case KEY_LEFT:
+            form_driver(form, REQ_PREV_CHAR);
+            break;
 
-		case KEY_RIGHT:
-			form_driver(form, REQ_NEXT_CHAR);
-			break;
+        case KEY_RIGHT:
+            form_driver(form, REQ_NEXT_CHAR);
+            break;
 
-		// Delete the char before cursor
-		case KEY_BACKSPACE:
-		case 127:
-			form_driver(form, REQ_DEL_PREV);
-			break;
+        // Delete the char before cursor
+        case KEY_BACKSPACE:
+        case 127:
+            form_driver(form, REQ_DEL_PREV);
+            break;
 
-		// Delete the char under the cursor
-		case KEY_DC:
-			form_driver(form, REQ_DEL_CHAR);
-			break;
+        // Delete the char under the cursor
+        case KEY_DC:
+            form_driver(form, REQ_DEL_CHAR);
+            break;
 
-		default:
-			form_driver(form, ch);
-			break;
-	}
+        default:
+            form_driver(form, ch);
+            break;
+    }
 
-	wrefresh(win_form);
+    wrefresh(win_form);
 }
 
 void cleanup_transaction_screen() {
-	unpost_form(form);
-	free_form(form);
-	free_field(fields[TRANSACTION_DATE_IDX * 2]);
-	free_field(fields[TRANSACTION_DATE_IDX * 2 + 1]);
-	free_field(fields[DESCRIPTION_IDX * 2]);
-	free_field(fields[DESCRIPTION_IDX * 2 + 1]);
-	free_field(fields[CATEGORY_IDX * 2]);
-	free_field(fields[CATEGORY_IDX * 2 + 1]);
-	free_field(fields[AMOUNT_IDX * 2]);
-	free_field(fields[AMOUNT_IDX * 2 + 1]);
-	free_field(fields[CLEARED_IDX * 2]);
-	free_field(fields[CLEARED_IDX * 2 + 1]);
-	free_field(fields[NOTES_IDX * 2]);
-	free_field(fields[NOTES_IDX * 2 + 1]);
-	free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2]);
-	free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]);
+    unpost_form(form);
+    free_form(form);
+    free_field(fields[TRANSACTION_DATE_IDX * 2]);
+    free_field(fields[TRANSACTION_DATE_IDX * 2 + 1]);
+    free_field(fields[DESCRIPTION_IDX * 2]);
+    free_field(fields[DESCRIPTION_IDX * 2 + 1]);
+    free_field(fields[CATEGORY_IDX * 2]);
+    free_field(fields[CATEGORY_IDX * 2 + 1]);
+    free_field(fields[AMOUNT_IDX * 2]);
+    free_field(fields[AMOUNT_IDX * 2 + 1]);
+    free_field(fields[CLEARED_IDX * 2]);
+    free_field(fields[CLEARED_IDX * 2 + 1]);
+    free_field(fields[NOTES_IDX * 2]);
+    free_field(fields[NOTES_IDX * 2 + 1]);
+    free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2]);
+    free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]);
     free_field(fields[ACCOUNT_TYPE_IDX * 2]);
     free_field(fields[ACCOUNT_TYPE_IDX * 2 + 1]);
-	delwin(win_form);
-	delwin(win_body);
-	endwin();
+    delwin(win_form);
+    delwin(win_body);
+    endwin();
     win_form = NULL;
 }
 
 void show_transaction_insert_screen() {
-	int ch = 0;
-	int label_length = 16;
-	int text_length = 40;
-	initscr();
-	noecho();
-	cbreak();
-	keypad(stdscr, TRUE);
+    int ch = 0;
+    int label_length = 16;
+    int text_length = 40;
+    initscr();
+    noecho();
+    cbreak();
+    keypad(stdscr, TRUE);
 
-	win_body = newwin(24, 80, 0, 0);
-	assert(win_body != NULL);
-	box(win_body, 0, 0);
-	win_form = derwin(win_body, 20, 78, 3, 1);
-	assert(win_form != NULL);
-	box(win_form, 0, 0);
+    win_body = newwin(24, 80, 0, 0);
+    assert(win_body != NULL);
+    box(win_body, 0, 0);
+    win_form = derwin(win_body, 20, 78, 3, 1);
+    assert(win_form != NULL);
+    box(win_form, 0, 0);
     curs_set(1);
-	mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F12 to clear");
+    mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F12 to clear");
 
-	fields[TRANSACTION_DATE_IDX * 2] = new_field(1, label_length, TRANSACTION_DATE_IDX * 2, 0, 0, 0);
-	fields[TRANSACTION_DATE_IDX * 2 + 1] = new_field(1, text_length, TRANSACTION_DATE_IDX * 2, label_length + 1, 0, 0);
-	fields[DESCRIPTION_IDX * 2] = new_field(1, label_length, DESCRIPTION_IDX * 2, 0, 0, 0);
-	fields[DESCRIPTION_IDX * 2 + 1] = new_field(1, text_length, DESCRIPTION_IDX * 2, label_length + 1, 0, 0);
+    fields[TRANSACTION_DATE_IDX * 2] = new_field(1, label_length, TRANSACTION_DATE_IDX * 2, 0, 0, 0);
+    fields[TRANSACTION_DATE_IDX * 2 + 1] = new_field(1, text_length, TRANSACTION_DATE_IDX * 2, label_length + 1, 0, 0);
+    fields[DESCRIPTION_IDX * 2] = new_field(1, label_length, DESCRIPTION_IDX * 2, 0, 0, 0);
+    fields[DESCRIPTION_IDX * 2 + 1] = new_field(1, text_length, DESCRIPTION_IDX * 2, label_length + 1, 0, 0);
     fields[CATEGORY_IDX * 2] = new_field(1, label_length, CATEGORY_IDX * 2, 0, 0, 0);
     fields[CATEGORY_IDX * 2 + 1] = new_field(1, text_length, CATEGORY_IDX * 2, label_length + 1, 0, 0);
     fields[AMOUNT_IDX * 2] = new_field(1, label_length, AMOUNT_IDX * 2, 0, 0, 0);
@@ -294,21 +294,21 @@ void show_transaction_insert_screen() {
     fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1] = new_field(1, text_length, ACCOUNT_NAME_OWNER_IDX * 2, label_length + 1, 0, 0);
     fields[ACCOUNT_TYPE_IDX * 2] = new_field(1, label_length, ACCOUNT_TYPE_IDX * 2, 0, 0, 0);
     fields[ACCOUNT_TYPE_IDX * 2 + 1] = new_field(1, text_length, ACCOUNT_TYPE_IDX * 2, label_length + 1, 0, 0);
-	fields[16] = NULL;
+    fields[16] = NULL;
 
-	assert(fields[0] != NULL && fields[1] != NULL && fields[2] != NULL && fields[3] != NULL);
-	assert(fields[4] != NULL && fields[5] != NULL && fields[6] != NULL && fields[7] != NULL);
-	assert(fields[8] != NULL && fields[9] != NULL);
-	assert(fields[10] != NULL && fields[11] != NULL);
-	assert(fields[12] != NULL && fields[13] != NULL);
+    assert(fields[0] != NULL && fields[1] != NULL && fields[2] != NULL && fields[3] != NULL);
+    assert(fields[4] != NULL && fields[5] != NULL && fields[6] != NULL && fields[7] != NULL);
+    assert(fields[8] != NULL && fields[9] != NULL);
+    assert(fields[10] != NULL && fields[11] != NULL);
+    assert(fields[12] != NULL && fields[13] != NULL);
     assert(fields[14] != NULL && fields[15] != NULL);
 
     setDefaultValues();
 
-	set_field_opts(fields[TRANSACTION_DATE_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-	set_field_opts(fields[TRANSACTION_DATE_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
-	set_field_opts(fields[DESCRIPTION_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-	set_field_opts(fields[DESCRIPTION_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
+    set_field_opts(fields[TRANSACTION_DATE_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
+    set_field_opts(fields[TRANSACTION_DATE_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
+    set_field_opts(fields[DESCRIPTION_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
+    set_field_opts(fields[DESCRIPTION_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
     set_field_opts(fields[CATEGORY_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
     set_field_opts(fields[CATEGORY_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
     set_field_opts(fields[AMOUNT_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
@@ -322,28 +322,28 @@ void show_transaction_insert_screen() {
     set_field_opts(fields[ACCOUNT_TYPE_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
     set_field_opts(fields[ACCOUNT_TYPE_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
 
-	set_field_back(fields[TRANSACTION_DATE_IDX * 2 + 1], A_UNDERLINE);
-	set_field_back(fields[DESCRIPTION_IDX * 2 + 1], A_UNDERLINE);
-	set_field_back(fields[CATEGORY_IDX * 2 + 1], A_UNDERLINE);
-	set_field_back(fields[AMOUNT_IDX * 2 + 1], A_UNDERLINE);
-	set_field_back(fields[CLEARED_IDX * 2 + 1], A_UNDERLINE);
-	set_field_back(fields[NOTES_IDX * 2 + 1], A_UNDERLINE);
-	set_field_back(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], A_UNDERLINE);
-	set_field_back(fields[ACCOUNT_TYPE_IDX * 2 + 1], A_UNDERLINE);
+    set_field_back(fields[TRANSACTION_DATE_IDX * 2 + 1], A_UNDERLINE);
+    set_field_back(fields[DESCRIPTION_IDX * 2 + 1], A_UNDERLINE);
+    set_field_back(fields[CATEGORY_IDX * 2 + 1], A_UNDERLINE);
+    set_field_back(fields[AMOUNT_IDX * 2 + 1], A_UNDERLINE);
+    set_field_back(fields[CLEARED_IDX * 2 + 1], A_UNDERLINE);
+    set_field_back(fields[NOTES_IDX * 2 + 1], A_UNDERLINE);
+    set_field_back(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], A_UNDERLINE);
+    set_field_back(fields[ACCOUNT_TYPE_IDX * 2 + 1], A_UNDERLINE);
 
-	form = new_form(fields);
-	assert(form != NULL);
-	set_form_win(form, win_form);
-	set_form_sub(form, derwin(win_form, 18, 76, 1, 1));
-	post_form(form);
+    form = new_form(fields);
+    assert(form != NULL);
+    set_form_win(form, win_form);
+    set_form_sub(form, derwin(win_form, 18, 76, 1, 1));
+    post_form(form);
 
-	refresh();
-	wrefresh(win_body);
-	wrefresh(win_form);
+    refresh();
+    wrefresh(win_body);
+    wrefresh(win_form);
 
-	//while ((ch = wgetch(win_body)) != 27) { //escape = 27
-	while ((ch = getch()) != 27) { //escape = 27
-		driver(ch);
+    //while ((ch = wgetch(win_body)) != 27) { //escape = 27
+    while ((ch = getch()) != 27) { //escape = 27
+        driver(ch);
     }
 
   cleanup_transaction_screen();
@@ -441,6 +441,5 @@ void show_main_screen() {
 
 int main(int arg, char *argv[]) {
   show_main_screen();
-  //show_transaction_insert_screen();
   return 0;
 }
