@@ -102,10 +102,17 @@ size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp) {
    return size * nmemb;
 }
 
+//size_t write_to_string(void *ptr, size_t size, size_t count, void *stream) {
+//  ((string*)stream)->append((char*)ptr, 0, size*count);
+//  return size*count;
+//}
+
 int curl_post_call(char *payload) {
     CURL *curl = curl_easy_init();
     CURLcode result;
     struct curl_slist *headers = NULL;
+    long  http_code= 0;
+    //char response[1000] = {0};
     //FILE *devnull = fopen("/dev/null", "w+");
     headers = curl_slist_append(headers, "Accept: application/json");
     headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -115,11 +122,17 @@ int curl_post_call(char *payload) {
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    //curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+    //curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/transaction/insert");
     result = curl_easy_perform(curl);
+    curl_easy_getinfo(curl, CURLINFO_HTTP_CODE, &http_code);
     if( result == CURLE_OK ) {
       return 0;
     }
+    //fprintf(stdout, "curl failed with HTTP code (%ld): %s\n", http_code, curl_easy_strerror(result));
+    //sleep(1);
+    printw("curl failed with HTTP code (%ld): %s\n", http_code, curl_easy_strerror(result));
     return 1;
 }
 
@@ -187,7 +200,6 @@ static void driver(int ch) {
             refresh();
             pos_form_cursor(form);
             break;
-
         case 353: //shift tab
             form_driver(form, REQ_PREV_FIELD);
             break;
@@ -207,26 +219,21 @@ static void driver(int ch) {
             form_driver(form, REQ_PREV_FIELD);
             form_driver(form, REQ_END_LINE);
             break;
-
         case KEY_LEFT:
             form_driver(form, REQ_PREV_CHAR);
             break;
-
         case KEY_RIGHT:
             form_driver(form, REQ_NEXT_CHAR);
             break;
-
         // Delete the char before cursor
         case KEY_BACKSPACE:
         case 127:
             form_driver(form, REQ_DEL_PREV);
             break;
-
         // Delete the char under the cursor
         case KEY_DC:
             form_driver(form, REQ_DEL_CHAR);
             break;
-
         default:
             form_driver(form, ch);
             break;
