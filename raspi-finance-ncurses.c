@@ -38,6 +38,8 @@ static WINDOW *win_body = NULL;
 static WINDOW *win_form = NULL;
 static WINDOW *win_main_menu = NULL;
 
+int account_list_index = 0;
+
 void show_main_screen();
 void show_transaction_insert_screen();
 
@@ -63,13 +65,12 @@ char * trim_whitespaces( char *str ) {
 }
 
 void setDefaultValues() {
-    char today_string[20] = {0};
+    char today_string[30] = {0};
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
-    char list[50][20] = {"chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian" };
 
     //strftime(today_string, sizeof(today_string)-1, "%m/%d/%Y", t);
-    strftime(today_string, sizeof(today_string)-1, "%Y-%m-%d", t);
+    strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", t);
 
 	set_field_buffer(fields[TRANSACTION_DATE_IDX * 2], 0, TRANSACTION_DATE);
 	set_field_buffer(fields[TRANSACTION_DATE_IDX * 2 + 1], 0, today_string);
@@ -161,7 +162,17 @@ int jsonPrintFieldValues() {
 }
 
 static void driver(int ch) {
+    char account_list[50][20] = {"chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian" };
+
 	switch (ch) {
+		case KEY_F(4):
+		   set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
+		   set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[--account_list_index % 9]);
+		break;
+        case KEY_F(5):
+           set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
+           set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[++account_list_index % 9]);
+        break;
 		case KEY_F(2):
 			// Or the current field buffer won't be sync with what is displayed
 			form_driver(form, REQ_NEXT_FIELD);
@@ -330,15 +341,14 @@ void show_transaction_insert_screen() {
 	wrefresh(win_body);
 	wrefresh(win_form);
 
-	while ((ch = wgetch(win_body)) != 27) { //escape = 27
+	//while ((ch = wgetch(win_body)) != 27) { //escape = 27
+	while ((ch = getch()) != 27) { //escape = 27
 		driver(ch);
     }
 
   cleanup_transaction_screen();
-  show_main_screen();
+  //show_main_screen();
 }
-
-
 
 void show_main_screen() {
     //int list_size = 6;
@@ -347,7 +357,7 @@ void show_main_screen() {
     int ch, i = 0;
 
     initscr(); // initialize Ncurses
-    win_main_menu = newwin( 10, 15, 1, 1 ); // create a new window
+    win_main_menu = newwin( 10, 15, 1, 1); // create a new window
     assert(win_main_menu != NULL);
     box(win_main_menu, 0, 0); // sets default borders for the window
 
@@ -431,5 +441,6 @@ void show_main_screen() {
 
 int main(int arg, char *argv[]) {
   show_main_screen();
+  //show_transaction_insert_screen();
   return 0;
 }
