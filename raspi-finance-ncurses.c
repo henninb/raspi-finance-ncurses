@@ -32,6 +32,11 @@
 
 #define MAIN_MENU_LIST_SIZE 6
 
+struct string {
+  char *ptr;
+  size_t len;
+};
+
 static FORM *form = NULL;
 static FIELD *fields[17];
 static WINDOW *win_body = NULL;
@@ -98,20 +103,44 @@ int isActiveField( const FIELD *field ) {
   }
 }
 
+
+
+void init_string(struct string *s) {
+  s->len = 0;
+  s->ptr = malloc(s->len+1);
+  if (s->ptr == NULL) {
+    fprintf(stderr, "malloc() failed\n");
+    exit(EXIT_FAILURE);
+  }
+  s->ptr[0] = '\0';
+}
+
+size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s) {
+  size_t new_len = s->len + size*nmemb;
+  s->ptr = realloc(s->ptr, new_len+1);
+  if (s->ptr == NULL) {
+    fprintf(stderr, "realloc() failed\n");
+    exit(EXIT_FAILURE);
+  }
+  memcpy(s->ptr+s->len, ptr, size*nmemb);
+  s->ptr[new_len] = '\0';
+  s->len = new_len;
+
+  return size*nmemb;
+}
+
 size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp) {
    return size * nmemb;
 }
-
-//size_t write_to_string(void *ptr, size_t size, size_t count, void *stream) {
-//  ((string*)stream)->append((char*)ptr, 0, size*count);
-//  return size*count;
-//}
 
 int curl_post_call(char *payload) {
     CURL *curl = curl_easy_init();
     CURLcode result;
     struct curl_slist *headers = NULL;
     long  http_code= 0;
+    struct string response;
+    init_string(&response);
+
     //char response[1000] = {0};
     //FILE *devnull = fopen("/dev/null", "w+");
     headers = curl_slist_append(headers, "Accept: application/json");
@@ -121,17 +150,21 @@ int curl_post_call(char *payload) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-    //curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
-    //curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    //curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/transaction/insert");
     result = curl_easy_perform(curl);
-    curl_easy_getinfo(curl, CURLINFO_HTTP_CODE, &http_code);
+    curl_easy_cleanup(curl);
+    printw("%s\n", response.ptr);
+    free(response.ptr);
+    //curl_easy_getinfo(curl, CURLINFO_HTTP_CODE, &http_code);
     if( result == CURLE_OK ) {
       return 0;
     }
     //fprintf(stdout, "curl failed with HTTP code (%ld): %s\n", http_code, curl_easy_strerror(result));
     //sleep(1);
+
     printw("curl failed with HTTP code (%ld): %s\n", http_code, curl_easy_strerror(result));
     return 1;
 }
