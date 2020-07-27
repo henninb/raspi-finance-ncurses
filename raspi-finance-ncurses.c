@@ -156,17 +156,25 @@ int curl_post_call(char *payload) {
     curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/transaction/insert");
     result = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
-    printw("%s\n", response.ptr);
-    free(response.ptr);
-    //curl_easy_getinfo(curl, CURLINFO_HTTP_CODE, &http_code);
-    if( result == CURLE_OK ) {
+    if( strcmp(response.ptr, "transaction inserted") == 0) {
+      printw("200 - SUCCESS\n");
+      free(response.ptr);
       return 0;
+    } else {
+      printw("curl - %s\n", response.ptr);
+      free(response.ptr);
+      return 1;
     }
-    //fprintf(stdout, "curl failed with HTTP code (%ld): %s\n", http_code, curl_easy_strerror(result));
-    //sleep(1);
-
-    printw("curl failed with HTTP code (%ld): %s\n", http_code, curl_easy_strerror(result));
-    return 1;
+//    free(response.ptr);
+//    //curl_easy_getinfo(curl, CURLINFO_HTTP_CODE, &http_code);
+//    if( result == CURLE_OK ) {
+//      return 0;
+//    }
+//    //fprintf(stdout, "curl failed with HTTP code (%ld): %s\n", http_code, curl_easy_strerror(result));
+//    //sleep(1);
+//
+//    printw("curl failed with HTTP code (%ld): %s\n", http_code, curl_easy_strerror(result));
+//    return 1;
 }
 
 char * extractField( const FIELD * field ) {
@@ -202,8 +210,7 @@ int jsonPrintFieldValues() {
     snprintf(payload + strlen(payload), sizeof(payload), "}");
     int result = curl_post_call(payload);
     //wclear(win_body);
-    printw("%s", payload);
-    printw("-- %d", result);
+    //printw("%s", payload);
     return result;
 }
 
