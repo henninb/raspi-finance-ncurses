@@ -122,15 +122,12 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s) {
     fprintf(stderr, "realloc() failed\n");
     exit(EXIT_FAILURE);
   }
+
   memcpy(s->ptr+s->len, ptr, size*nmemb);
   s->ptr[new_len] = '\0';
   s->len = new_len;
 
   return size*nmemb;
-}
-
-size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp) {
-   return size * nmemb;
 }
 
 int curl_post_call(char *payload) {
@@ -150,7 +147,6 @@ int curl_post_call(char *payload) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
-    //curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/transaction/insert");
@@ -394,7 +390,7 @@ void show_transaction_insert_screen() {
     }
 
   cleanup_transaction_screen();
-  //show_main_screen();
+  show_main_screen();
 }
 
 void show_main_screen() {
@@ -404,7 +400,8 @@ void show_main_screen() {
     int ch, i = 0;
 
     initscr(); // initialize Ncurses
-    win_main_menu = newwin( 10, 15, 1, 1); // create a new window
+    //win_main_menu = newwin(10, 15, 1, 1); // create a new window
+    win_main_menu = newwin(24, 80, 0, 0);; // create a new window
     assert(win_main_menu != NULL);
     box(win_main_menu, 0, 0); // sets default borders for the window
 
@@ -441,12 +438,14 @@ void show_main_screen() {
                 break;
             case '\n':
                 if( i == 0 ) {
+                    wclear(win_main_menu);
                     delwin(win_main_menu);
                     endwin();
                     show_transaction_insert_screen();
                 }
 
                 if( i == 5 ) {
+                  wclear(win_main_menu);
                   delwin(win_main_menu);
                   endwin();
                   exit(0);
