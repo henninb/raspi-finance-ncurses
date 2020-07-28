@@ -72,7 +72,6 @@ char * trim_whitespaces( char *str ) {
 void setDefaultValues() {
     char today_string[30] = {0};
     time_t now = time(NULL);
-    //struct tm *local = localtime(&now);
 
     strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", localtime(&now));
 
@@ -263,22 +262,7 @@ void cleanup_transaction_screen() {
     for( int idx = 0; idx < 16; idx++ ) {
       free_field(fields[idx]);
     }
-//    free_field(fields[TRANSACTION_DATE_IDX * 2]);
-//    free_field(fields[TRANSACTION_DATE_IDX * 2 + 1]);
-//    free_field(fields[DESCRIPTION_IDX * 2]);
-//    free_field(fields[DESCRIPTION_IDX * 2 + 1]);
-//    free_field(fields[CATEGORY_IDX * 2]);
-//    free_field(fields[CATEGORY_IDX * 2 + 1]);
-//    free_field(fields[AMOUNT_IDX * 2]);
-//    free_field(fields[AMOUNT_IDX * 2 + 1]);
-//    free_field(fields[CLEARED_IDX * 2]);
-//    free_field(fields[CLEARED_IDX * 2 + 1]);
-//    free_field(fields[NOTES_IDX * 2]);
-//    free_field(fields[NOTES_IDX * 2 + 1]);
-//    free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2]);
-//    free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]);
-//    free_field(fields[ACCOUNT_TYPE_IDX * 2]);
-//    free_field(fields[ACCOUNT_TYPE_IDX * 2 + 1]);
+
     delwin(win_form);
     delwin(win_body);
     endwin();
@@ -324,12 +308,6 @@ void show_transaction_insert_screen() {
     for( int idx = 0; idx < 16; idx++ ) {
       assert(fields[idx] != NULL);
     }
-//    assert(fields[0] != NULL && fields[1] != NULL && fields[2] != NULL && fields[3] != NULL);
-//    assert(fields[4] != NULL && fields[5] != NULL && fields[6] != NULL && fields[7] != NULL);
-//    assert(fields[8] != NULL && fields[9] != NULL);
-//    assert(fields[10] != NULL && fields[11] != NULL);
-//    assert(fields[12] != NULL && fields[13] != NULL);
-//    assert(fields[14] != NULL && fields[15] != NULL);
 
     setDefaultValues();
 
