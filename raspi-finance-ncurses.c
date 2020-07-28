@@ -21,6 +21,11 @@
 #define DATE_UPDATED "dateUpdated"
 #define DATE_ADDED "dateAdded"
 
+#define TRANSACTION_INSERT_URL "http://localhost:8080/transaction/insert"
+
+#define SUCCESS 0
+#define FAILURE 1
+
 #define ACCOUNT_NAME_OWNER_IDX 0
 #define ACCOUNT_TYPE_IDX 1
 #define TRANSACTION_DATE_IDX 2
@@ -111,9 +116,9 @@ void init_string( struct string *s ) {
   s->ptr[0] = '\0';
 }
 
-size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s) {
+size_t write_response_to_string( void *ptr, size_t size, size_t nmemb, struct string *s ) {
   size_t new_len = s->len + size*nmemb;
-  s->ptr = realloc(s->ptr, new_len+1);
+  s->ptr = realloc(s->ptr, new_len + 1);
   if (s->ptr == NULL) {
     fprintf(stderr, "realloc() failed\n");
     exit(EXIT_FAILURE);
@@ -126,11 +131,11 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s) {
   return size*nmemb;
 }
 
-int curl_post_call(char *payload) {
+int curl_post_call( char *payload ) {
     CURL *curl = curl_easy_init();
     CURLcode result;
     struct curl_slist *headers = NULL;
-    struct string response;
+    struct string response = {0};
     init_string(&response);
 
     headers = curl_slist_append(headers, "Accept: application/json");
@@ -140,27 +145,31 @@ int curl_post_call(char *payload) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response_to_string);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/transaction/insert");
+    curl_easy_setopt(curl, CURLOPT_URL, TRANSACTION_INSERT_URL);
     result = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
     if( strcmp(response.ptr, "transaction inserted") == 0) {
       printw("200 - SUCCESS\n");
       free(response.ptr);
-      return 0;
+      return SUCCESS;
     } else {
-      printw("curl - %s\n", response.ptr);
+      if( response.len > 0) {
+        printw("curl - %s\n", response.ptr);
+      } else {
+        printw("failed to connect.");
+      }
       free(response.ptr);
-      return 1;
+      return FAILURE;
     }
 }
 
-char * extractField( const FIELD * field ) {
+char * extract_field( const FIELD * field ) {
   return trim_whitespaces(field_buffer(field, 0));
 }
 
-int jsonPrintFieldValues() {
+int transaction_json_generated() {
     char payload[500] = {0};
     uuid_t binuuid;
     char uuid[37] = {0};
@@ -174,15 +183,14 @@ int jsonPrintFieldValues() {
     }
 
     snprintf(payload + strlen(payload), sizeof(payload), "{");
-    //snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", TRANSACTION_DATE, extractField(fields[TRANSACTION_DATE_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", TRANSACTION_DATE, extractField(fields[TRANSACTION_DATE_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", DESCRIPTION, extractField(fields[DESCRIPTION_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", CATEGORY, extractField(fields[CATEGORY_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extractField(fields[AMOUNT_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", CLEARED, extractField(fields[CLEARED_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", NOTES, extractField(fields[NOTES_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, extractField(fields[ACCOUNT_TYPE_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extractField(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", TRANSACTION_DATE, extract_field(fields[TRANSACTION_DATE_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", DESCRIPTION, extract_field(fields[DESCRIPTION_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", CATEGORY, extract_field(fields[CATEGORY_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extract_field(fields[AMOUNT_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", CLEARED, extract_field(fields[CLEARED_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", NOTES, extract_field(fields[NOTES_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, extract_field(fields[ACCOUNT_TYPE_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_ADDED, (unsigned long)time(NULL) * 1000);
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_UPDATED, (unsigned long)time(NULL) * 1000);
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
@@ -193,7 +201,7 @@ int jsonPrintFieldValues() {
     return result;
 }
 
-static void driver(int ch) {
+static void driver_transaction_screen( int ch ) {
     char account_list[50][20] = {"chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian" };
 
     switch (ch) {
@@ -211,7 +219,7 @@ static void driver(int ch) {
             form_driver(form, REQ_PREV_FIELD);
             move(LINES-3, 2);
 
-            if( jsonPrintFieldValues() == 0 ) {
+            if( transaction_json_generated() == SUCCESS ) {
               setDefaultValues();
             }
 
@@ -348,7 +356,7 @@ void show_transaction_insert_screen() {
 
     //while ((ch = wgetch(win_body)) != 27) { //escape = 27
     while ((ch = getch()) != 27) { //escape = 27
-        driver(ch);
+        driver_transaction_screen(ch);
     }
 
   cleanup_transaction_screen();
