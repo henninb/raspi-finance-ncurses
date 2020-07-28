@@ -93,17 +93,17 @@ void setDefaultValues() {
     set_field_buffer(fields[ACCOUNT_TYPE_IDX * 2 + 1], 0, "credit");
 }
 
-int isActiveField( const FIELD *field ) {
-  if( field_opts(field) & O_ACTIVE ) {
-    return 1;
-  } else {
-    return 0;
-  }
-}
+//int isActiveField( const FIELD *field ) {
+//  if( field_opts(field) & O_ACTIVE ) {
+//    return 1;
+//  } else {
+//    return 0;
+//  }
+//}
 
-void init_string(struct string *s) {
+void init_string( struct string *s ) {
   s->len = 0;
-  s->ptr = malloc(s->len+1);
+  s->ptr = malloc(1);
   if (s->ptr == NULL) {
     fprintf(stderr, "malloc() failed\n");
     exit(EXIT_FAILURE);
@@ -434,7 +434,7 @@ void show_main_screen() {
 
     delwin(win_main_menu);
     endwin();
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
 
 int main(int arg, char *argv[]) {
