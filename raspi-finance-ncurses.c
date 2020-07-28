@@ -392,7 +392,8 @@ void show_main_screen() {
     //int list_size = 6;
     char list[MAIN_MENU_LIST_SIZE][12] = { "transaction", "payment", "empty", "empty", "empty", "quit" };
     char item[12] = {0};
-    int ch, i = 0;
+    int ch = 0;
+    int idx = 0;
 
     initscr(); // initialize Ncurses
     //win_main_menu = newwin(10, 15, 1, 1); // create a new window
@@ -401,42 +402,42 @@ void show_main_screen() {
     box(win_main_menu, 0, 0); // sets default borders for the window
 
 // now print all the menu items and highlight the first one
-    for( i = 0; i< MAIN_MENU_LIST_SIZE; i++ ) {
-        if( i == 0 ) {
+    for( idx = 0; idx < MAIN_MENU_LIST_SIZE; idx++ ) {
+        if( idx == 0 ) {
             wattron(win_main_menu, A_STANDOUT); // highlights the first item.
         } else {
             wattroff(win_main_menu, A_STANDOUT);
         }
-        snprintf(item, sizeof(item), "%s", list[i]);
-        mvwprintw(win_main_menu, i+1, 2, "%s", item);
+        snprintf(item, sizeof(item), "%s", list[idx]);
+        mvwprintw(win_main_menu, idx + 1, 2, "%s", item);
     }
 
     wrefresh(win_main_menu); // update the terminal screen
 
-    i = 0;
+    idx = 0;
     noecho(); // disable echoing of characters on the screen
     keypad(win_main_menu, TRUE); // enable keyboard input for the window.
     curs_set(0); // hide the default screen cursor.
 
     ch = wgetch(win_main_menu);
     while( ch != 27 ) {
-        snprintf(item, sizeof(item), "%s",  list[i]);
-        mvwprintw(win_main_menu, i+1, 2, "%s", item );
+        snprintf(item, sizeof(item), "%s",  list[idx]);
+        mvwprintw(win_main_menu, idx + 1, 2, "%s", item );
         switch( ch ) {
             case KEY_UP:
             case 'k':
-                i--;
-                i = ( i < 0 ) ? (MAIN_MENU_LIST_SIZE-1) : i;
+                idx--;
+                idx = ( idx < 0 ) ? (MAIN_MENU_LIST_SIZE-1) : idx;
                 break;
             case '\n':
-                if( i == 0 ) {
+                if( idx == 0 ) {
                     wclear(win_main_menu);
                     delwin(win_main_menu);
                     endwin();
                     show_transaction_insert_screen();
                 }
 
-                if( i == 5 ) {
+                if( idx == 5 ) {
                   wclear(win_main_menu);
                   delwin(win_main_menu);
                   endwin();
@@ -448,16 +449,16 @@ void show_main_screen() {
             break;
             case KEY_DOWN:
             case 'j':
-                i++;
-                i = ( i>(MAIN_MENU_LIST_SIZE-1) ) ? 0 : i;
+                idx++;
+                idx = ( idx > (MAIN_MENU_LIST_SIZE-1) ) ? 0 : idx;
                 break;
         }
         // now highlight the next item in the list.
         wattron(win_main_menu, A_STANDOUT);
 
         //sprintf(item, "%-7s",  list[i]);
-        snprintf(item, sizeof(item), "%s",  list[i]);
-        mvwprintw(win_main_menu, i+1, 2, "%s", item);
+        snprintf(item, sizeof(item), "%s",  list[idx]);
+        mvwprintw(win_main_menu, idx + 1, 2, "%s", item);
         wattroff(win_main_menu, A_STANDOUT);
 
 
