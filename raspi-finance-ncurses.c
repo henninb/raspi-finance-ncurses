@@ -72,10 +72,9 @@ char * trim_whitespaces( char *str ) {
 void setDefaultValues() {
     char today_string[30] = {0};
     time_t now = time(NULL);
-    struct tm *t = localtime(&now);
+    //struct tm *local = localtime(&now);
 
-    //strftime(today_string, sizeof(today_string)-1, "%m/%d/%Y", t);
-    strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", t);
+    strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", localtime(&now));
 
     set_field_buffer(fields[TRANSACTION_DATE_IDX * 2], 0, TRANSACTION_DATE);
     set_field_buffer(fields[TRANSACTION_DATE_IDX * 2 + 1], 0, today_string);
@@ -102,8 +101,6 @@ int isActiveField( const FIELD *field ) {
     return 0;
   }
 }
-
-
 
 void init_string(struct string *s) {
   s->len = 0;
@@ -134,12 +131,9 @@ int curl_post_call(char *payload) {
     CURL *curl = curl_easy_init();
     CURLcode result;
     struct curl_slist *headers = NULL;
-    long  http_code= 0;
     struct string response;
     init_string(&response);
 
-    //char response[1000] = {0};
-    //FILE *devnull = fopen("/dev/null", "w+");
     headers = curl_slist_append(headers, "Accept: application/json");
     headers = curl_slist_append(headers, "Content-Type: application/json");
     headers = curl_slist_append(headers, "charset: utf-8");
@@ -161,16 +155,6 @@ int curl_post_call(char *payload) {
       free(response.ptr);
       return 1;
     }
-//    free(response.ptr);
-//    //curl_easy_getinfo(curl, CURLINFO_HTTP_CODE, &http_code);
-//    if( result == CURLE_OK ) {
-//      return 0;
-//    }
-//    //fprintf(stdout, "curl failed with HTTP code (%ld): %s\n", http_code, curl_easy_strerror(result));
-//    //sleep(1);
-//
-//    printw("curl failed with HTTP code (%ld): %s\n", http_code, curl_easy_strerror(result));
-//    return 1;
 }
 
 char * extractField( const FIELD * field ) {
@@ -186,7 +170,7 @@ int jsonPrintFieldValues() {
     uuid_unparse_lower(binuuid, uuid);
     uuid_unparse(binuuid, uuid);
 
-    for(int idx = 0; uuid[idx]; idx++){
+    for( int idx = 0; uuid[idx]; idx++ ) {
       uuid[idx] = tolower(uuid[idx]);
     }
 
@@ -276,22 +260,25 @@ static void driver(int ch) {
 void cleanup_transaction_screen() {
     unpost_form(form);
     free_form(form);
-    free_field(fields[TRANSACTION_DATE_IDX * 2]);
-    free_field(fields[TRANSACTION_DATE_IDX * 2 + 1]);
-    free_field(fields[DESCRIPTION_IDX * 2]);
-    free_field(fields[DESCRIPTION_IDX * 2 + 1]);
-    free_field(fields[CATEGORY_IDX * 2]);
-    free_field(fields[CATEGORY_IDX * 2 + 1]);
-    free_field(fields[AMOUNT_IDX * 2]);
-    free_field(fields[AMOUNT_IDX * 2 + 1]);
-    free_field(fields[CLEARED_IDX * 2]);
-    free_field(fields[CLEARED_IDX * 2 + 1]);
-    free_field(fields[NOTES_IDX * 2]);
-    free_field(fields[NOTES_IDX * 2 + 1]);
-    free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2]);
-    free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]);
-    free_field(fields[ACCOUNT_TYPE_IDX * 2]);
-    free_field(fields[ACCOUNT_TYPE_IDX * 2 + 1]);
+    for( int idx = 0; idx < 16; idx++ ) {
+      free_field(fields[idx]);
+    }
+//    free_field(fields[TRANSACTION_DATE_IDX * 2]);
+//    free_field(fields[TRANSACTION_DATE_IDX * 2 + 1]);
+//    free_field(fields[DESCRIPTION_IDX * 2]);
+//    free_field(fields[DESCRIPTION_IDX * 2 + 1]);
+//    free_field(fields[CATEGORY_IDX * 2]);
+//    free_field(fields[CATEGORY_IDX * 2 + 1]);
+//    free_field(fields[AMOUNT_IDX * 2]);
+//    free_field(fields[AMOUNT_IDX * 2 + 1]);
+//    free_field(fields[CLEARED_IDX * 2]);
+//    free_field(fields[CLEARED_IDX * 2 + 1]);
+//    free_field(fields[NOTES_IDX * 2]);
+//    free_field(fields[NOTES_IDX * 2 + 1]);
+//    free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2]);
+//    free_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]);
+//    free_field(fields[ACCOUNT_TYPE_IDX * 2]);
+//    free_field(fields[ACCOUNT_TYPE_IDX * 2 + 1]);
     delwin(win_form);
     delwin(win_body);
     endwin();
@@ -334,12 +321,15 @@ void show_transaction_insert_screen() {
     fields[ACCOUNT_TYPE_IDX * 2 + 1] = new_field(1, text_length, ACCOUNT_TYPE_IDX * 2, label_length + 1, 0, 0);
     fields[16] = NULL;
 
-    assert(fields[0] != NULL && fields[1] != NULL && fields[2] != NULL && fields[3] != NULL);
-    assert(fields[4] != NULL && fields[5] != NULL && fields[6] != NULL && fields[7] != NULL);
-    assert(fields[8] != NULL && fields[9] != NULL);
-    assert(fields[10] != NULL && fields[11] != NULL);
-    assert(fields[12] != NULL && fields[13] != NULL);
-    assert(fields[14] != NULL && fields[15] != NULL);
+    for( int idx = 0; idx < 16; idx++ ) {
+      assert(fields[idx] != NULL);
+    }
+//    assert(fields[0] != NULL && fields[1] != NULL && fields[2] != NULL && fields[3] != NULL);
+//    assert(fields[4] != NULL && fields[5] != NULL && fields[6] != NULL && fields[7] != NULL);
+//    assert(fields[8] != NULL && fields[9] != NULL);
+//    assert(fields[10] != NULL && fields[11] != NULL);
+//    assert(fields[12] != NULL && fields[13] != NULL);
+//    assert(fields[14] != NULL && fields[15] != NULL);
 
     setDefaultValues();
 
@@ -460,7 +450,6 @@ void show_main_screen() {
         snprintf(item, sizeof(item), "%s",  list[idx]);
         mvwprintw(win_main_menu, idx + 1, 2, "%s", item);
         wattroff(win_main_menu, A_STANDOUT);
-
 
         if( win_main_menu == NULL ) {
           printf("because the window pointer is null\n");
