@@ -436,13 +436,10 @@ void show_main_screen() {
         ch = wgetch(win_main_menu);
     }
 
-    if( ch == -1 ) {
-      printf("exited application\n");
-      exit(1);
-    }
     delwin(win_main_menu);
     endwin();
-    win_main_menu = NULL;
+    exit(0);
+    //win_main_menu = NULL;
 }
 
 int main(int arg, char *argv[]) {
