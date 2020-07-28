@@ -74,7 +74,7 @@ char * trim_whitespaces( char *str ) {
     return str;
 }
 
-void setDefaultValues() {
+void set_transaction_default_values() {
     char today_string[30] = {0};
     time_t now = time(NULL);
 
@@ -97,14 +97,6 @@ void setDefaultValues() {
     set_field_buffer(fields[ACCOUNT_TYPE_IDX * 2], 0, ACCOUNT_TYPE);
     set_field_buffer(fields[ACCOUNT_TYPE_IDX * 2 + 1], 0, "credit");
 }
-
-//int isActiveField( const FIELD *field ) {
-//  if( field_opts(field) & O_ACTIVE ) {
-//    return 1;
-//  } else {
-//    return 0;
-//  }
-//}
 
 void init_string( struct string *s ) {
   s->len = 0;
@@ -220,7 +212,7 @@ static void driver_transaction_screen( int ch ) {
             move(LINES-3, 2);
 
             if( transaction_json_generated() == SUCCESS ) {
-              setDefaultValues();
+              set_transaction_default_values();
             }
 
             refresh();
@@ -316,7 +308,7 @@ void show_transaction_insert_screen() {
       assert(fields[idx] != NULL);
     }
 
-    setDefaultValues();
+    set_transaction_default_values();
 
     set_field_opts(fields[TRANSACTION_DATE_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
     set_field_opts(fields[TRANSACTION_DATE_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
