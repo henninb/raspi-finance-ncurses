@@ -10,12 +10,12 @@
 #include <uuid/uuid.h>
 
 #define TRANSACTION_DATE "transactionDate"
+#define ACCOUNT_NAME_OWNER "accountNameOwner"
+#define AMOUNT "amount"
 #define DESCRIPTION "description"
 #define CATEGORY "category"
-#define AMOUNT "amount"
 #define CLEARED "cleared"
 #define NOTES "notes"
-#define ACCOUNT_NAME_OWNER "accountNameOwner"
 #define GUID "guid"
 #define ACCOUNT_TYPE "accountType"
 #define DATE_UPDATED "dateUpdated"
@@ -30,7 +30,7 @@
 #define CLEARED_IDX 6
 #define NOTES_IDX 7
 
-#define MAIN_MENU_LIST_SIZE 6
+#define MAIN_MENU_LIST_SIZE 3
 
 struct string {
   char *ptr;
@@ -266,7 +266,6 @@ void cleanup_transaction_screen() {
     delwin(win_form);
     delwin(win_body);
     endwin();
-    win_form = NULL;
 }
 
 void show_transaction_insert_screen() {
@@ -358,7 +357,7 @@ void show_transaction_insert_screen() {
 
 void show_main_screen() {
     //int list_size = 6;
-    char list[MAIN_MENU_LIST_SIZE][12] = { "transaction", "payment", "empty", "empty", "empty", "quit" };
+    char list[MAIN_MENU_LIST_SIZE][12] = { "transaction", "payment", "quit" };
     char item[12] = {0};
     int ch = 0;
     int idx = 0;
@@ -405,15 +404,16 @@ void show_main_screen() {
                     show_transaction_insert_screen();
                 }
 
-                if( idx == 5 ) {
+                if( idx == 1 ) {
+                    printw("payment.");
+                }
+
+                if( idx == 2 ) {
                   wclear(win_main_menu);
                   delwin(win_main_menu);
                   endwin();
                   exit(0);
                 }
-            break;
-            case -1:
-              exit(1);
             break;
             case KEY_DOWN:
             case 'j':
@@ -429,17 +429,12 @@ void show_main_screen() {
         mvwprintw(win_main_menu, idx + 1, 2, "%s", item);
         wattroff(win_main_menu, A_STANDOUT);
 
-        if( win_main_menu == NULL ) {
-          printf("because the window pointer is null\n");
-          exit(2);
-        }
         ch = wgetch(win_main_menu);
     }
 
     delwin(win_main_menu);
     endwin();
     exit(0);
-    //win_main_menu = NULL;
 }
 
 int main(int arg, char *argv[]) {
