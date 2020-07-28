@@ -228,8 +228,7 @@ static void driver(int ch) {
             form_driver(form, REQ_PREV_FIELD);
             move(LINES-3, 2);
 
-            int result = jsonPrintFieldValues();
-            if( result == 0 ) {
+            if( jsonPrintFieldValues() == 0 ) {
               setDefaultValues();
             }
 
@@ -239,14 +238,10 @@ static void driver(int ch) {
         case 353: //shift tab
             form_driver(form, REQ_PREV_FIELD);
             break;
-        case KEY_F(12):
-            setDefaultValues();
-            break;
         case KEY_DOWN:
             form_driver(form, REQ_NEXT_FIELD);
             form_driver(form, REQ_END_LINE);
             break;
-        case KEY_STAB:
         case '\t':
         case '\n':
             form_driver(form, REQ_NEXT_FIELD);
@@ -319,7 +314,7 @@ void show_transaction_insert_screen() {
     assert(win_form != NULL);
     box(win_form, 0, 0);
     curs_set(1);
-    mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F12 to clear");
+    mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F4/F5 back/forward account");
 
     fields[TRANSACTION_DATE_IDX * 2] = new_field(1, label_length, TRANSACTION_DATE_IDX * 2, 0, 0, 0);
     fields[TRANSACTION_DATE_IDX * 2 + 1] = new_field(1, text_length, TRANSACTION_DATE_IDX * 2, label_length + 1, 0, 0);
@@ -395,7 +390,7 @@ void show_transaction_insert_screen() {
 
 void show_main_screen() {
     //int list_size = 6;
-    char list[MAIN_MENU_LIST_SIZE][12] = { "transaction", "empty", "empty", "empty", "empty", "quit" };
+    char list[MAIN_MENU_LIST_SIZE][12] = { "transaction", "payment", "empty", "empty", "empty", "quit" };
     char item[12] = {0};
     int ch, i = 0;
 
@@ -417,9 +412,6 @@ void show_main_screen() {
     }
 
     wrefresh(win_main_menu); // update the terminal screen
-    if( win_main_menu == NULL ) {
-      printf("win_main_menu is null\n");
-    }
 
     i = 0;
     noecho(); // disable echoing of characters on the screen
