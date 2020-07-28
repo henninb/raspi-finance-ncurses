@@ -52,6 +52,7 @@ int account_list_index = 0;
 
 void show_main_screen();
 void show_transaction_insert_screen();
+void set_transaction_default_values();
 
 char * trim_whitespaces( char *str ) {
     char *end = NULL;
@@ -72,30 +73,6 @@ char * trim_whitespaces( char *str ) {
     *(end+1) = '\0';
 
     return str;
-}
-
-void set_transaction_default_values() {
-    char today_string[30] = {0};
-    time_t now = time(NULL);
-
-    strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", localtime(&now));
-
-    set_field_buffer(fields[TRANSACTION_DATE_IDX * 2], 0, TRANSACTION_DATE);
-    set_field_buffer(fields[TRANSACTION_DATE_IDX * 2 + 1], 0, today_string);
-    set_field_buffer(fields[DESCRIPTION_IDX * 2], 0, DESCRIPTION);
-    set_field_buffer(fields[DESCRIPTION_IDX * 2 + 1], 0, "");
-    set_field_buffer(fields[CATEGORY_IDX * 2], 0, CATEGORY);
-    set_field_buffer(fields[CATEGORY_IDX * 2 + 1], 0, "");
-    set_field_buffer(fields[AMOUNT_IDX * 2], 0, AMOUNT);
-    set_field_buffer(fields[AMOUNT_IDX * 2 + 1], 0, "0.00");
-    set_field_buffer(fields[CLEARED_IDX * 2], 0, CLEARED);
-    set_field_buffer(fields[CLEARED_IDX * 2 + 1], 0, "0");
-    set_field_buffer(fields[NOTES_IDX * 2], 0, NOTES);
-    set_field_buffer(fields[NOTES_IDX * 2 + 1], 0, "");
-    set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2], 0, ACCOUNT_NAME_OWNER);
-    set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
-    set_field_buffer(fields[ACCOUNT_TYPE_IDX * 2], 0, ACCOUNT_TYPE);
-    set_field_buffer(fields[ACCOUNT_TYPE_IDX * 2 + 1], 0, "credit");
 }
 
 void init_string( struct string *s ) {
@@ -161,6 +138,44 @@ char * extract_field( const FIELD * field ) {
   return trim_whitespaces(field_buffer(field, 0));
 }
 
+void set_transaction_default_values() {
+    char today_string[30] = {0};
+    time_t now = time(NULL);
+
+    strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", localtime(&now));
+
+    set_field_buffer(fields[TRANSACTION_DATE_IDX * 2], 0, TRANSACTION_DATE);
+    set_field_buffer(fields[TRANSACTION_DATE_IDX * 2 + 1], 0, today_string);
+    set_field_buffer(fields[DESCRIPTION_IDX * 2], 0, DESCRIPTION);
+    set_field_buffer(fields[DESCRIPTION_IDX * 2 + 1], 0, "");
+    set_field_buffer(fields[CATEGORY_IDX * 2], 0, CATEGORY);
+    set_field_buffer(fields[CATEGORY_IDX * 2 + 1], 0, "");
+    set_field_buffer(fields[AMOUNT_IDX * 2], 0, AMOUNT);
+    set_field_buffer(fields[AMOUNT_IDX * 2 + 1], 0, "0.00");
+    set_field_buffer(fields[CLEARED_IDX * 2], 0, CLEARED);
+    set_field_buffer(fields[CLEARED_IDX * 2 + 1], 0, "0");
+    set_field_buffer(fields[NOTES_IDX * 2], 0, NOTES);
+    set_field_buffer(fields[NOTES_IDX * 2 + 1], 0, "");
+    set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2], 0, ACCOUNT_NAME_OWNER);
+    set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
+    set_field_buffer(fields[ACCOUNT_TYPE_IDX * 2], 0, ACCOUNT_TYPE);
+    set_field_buffer(fields[ACCOUNT_TYPE_IDX * 2 + 1], 0, "credit");
+}
+
+void set_payment_default_values() {
+    char today_string[30] = {0};
+    time_t now = time(NULL);
+
+    strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", localtime(&now));
+
+    set_field_buffer(fields[0], 0, TRANSACTION_DATE);
+    set_field_buffer(fields[1], 0, today_string);
+    set_field_buffer(fields[2], 0, AMOUNT);
+    set_field_buffer(fields[3], 0, "0.00");
+    set_field_buffer(fields[4], 0, ACCOUNT_NAME_OWNER);
+    set_field_buffer(fields[5], 0, "");
+}
+
 int transaction_json_generated() {
     char payload[500] = {0};
     uuid_t binuuid;
@@ -183,6 +198,38 @@ int transaction_json_generated() {
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", NOTES, extract_field(fields[NOTES_IDX * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, extract_field(fields[ACCOUNT_TYPE_IDX * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_ADDED, (unsigned long)time(NULL) * 1000);
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_UPDATED, (unsigned long)time(NULL) * 1000);
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
+    snprintf(payload + strlen(payload), sizeof(payload), "}");
+    int result = curl_post_call(payload);
+    //wclear(win_body);
+    //printw("%s", payload);
+    return result;
+}
+
+int payment_json_generated() {
+    char payload[500] = {0};
+    uuid_t binuuid;
+    char uuid[37] = {0};
+
+    uuid_generate_random(binuuid);
+    uuid_unparse_lower(binuuid, uuid);
+    uuid_unparse(binuuid, uuid);
+
+    for( int idx = 0; uuid[idx]; idx++ ) {
+      uuid[idx] = tolower(uuid[idx]);
+    }
+
+    snprintf(payload + strlen(payload), sizeof(payload), "{");
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", TRANSACTION_DATE, extract_field(fields[1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", DESCRIPTION, "payment");
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", CATEGORY, "bill_pay");
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extract_field(fields[3]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", CLEARED, "0");
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", NOTES, "note");
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, "credit");
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[5]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_ADDED, (unsigned long)time(NULL) * 1000);
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_UPDATED, (unsigned long)time(NULL) * 1000);
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
@@ -260,6 +307,18 @@ void cleanup_transaction_screen() {
     unpost_form(form);
     free_form(form);
     for( int idx = 0; idx < 16; idx++ ) {
+      free_field(fields[idx]);
+    }
+
+    delwin(win_form);
+    delwin(win_body);
+    endwin();
+}
+
+void cleanup_payment_screen() {
+    unpost_form(form);
+    free_form(form);
+    for( int idx = 0; idx < 6; idx++ ) {
       free_field(fields[idx]);
     }
 
