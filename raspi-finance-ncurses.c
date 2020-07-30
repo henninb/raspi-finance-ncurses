@@ -244,14 +244,12 @@ void driver_payment_screen( int ch ) {
 
     switch (ch) {
         case KEY_F(4):
-           //TODO: add back in
-           //set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
-           //set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[--account_list_index % 9]);
+           set_field_buffer(fields[5], 0, "");
+           set_field_buffer(fields[5], 0, account_list[--account_list_index % 9]);
         break;
         case KEY_F(5):
-           //TODO: add back in
-           //set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
-           //set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[++account_list_index % 9]);
+           set_field_buffer(fields[5], 0, "");
+           set_field_buffer(fields[5], 0, account_list[++account_list_index % 9]);
         break;
         case KEY_F(2):
             // Or the current field buffer won't be sync with what is displayed
