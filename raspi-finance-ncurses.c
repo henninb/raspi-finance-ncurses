@@ -367,10 +367,14 @@ void driver_transaction_screen( int ch ) {
 }
 
 void cleanup_transaction_screen() {
-    unpost_form(form);
-    free_form(form);
+    if( form != NULL ) {
+      unpost_form(form);
+      free_form(form);
+      form = NULL;
+    }
     for( int idx = 0; idx < 16; idx++ ) {
       free_field(fields[idx]);
+      fields[idx] = NULL;
     }
 
     delwin(win_form);
@@ -379,10 +383,15 @@ void cleanup_transaction_screen() {
 }
 
 void cleanup_payment_screen() {
-    unpost_form(form);
-    free_form(form);
+    if( form != NULL ) {
+      unpost_form(form);
+      free_form(form);
+      form = NULL;
+    }
+
     for( int idx = 0; idx < 6; idx++ ) {
       free_field(fields[idx]);
+      fields[idx] = NULL;
     }
 
     delwin(win_form);
