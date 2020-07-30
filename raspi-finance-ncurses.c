@@ -235,8 +235,7 @@ int payment_json_generated() {
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
     snprintf(payload + strlen(payload), sizeof(payload), "}");
     int result = curl_post_call(payload);
-    //wclear(win_body);
-    //printw("%s", payload);
+    printw("%s", payload);
     return result;
 }
 
@@ -245,10 +244,12 @@ void driver_payment_screen( int ch ) {
 
     switch (ch) {
         case KEY_F(4):
+           //TODO: add back in
            //set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
            //set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[--account_list_index % 9]);
         break;
         case KEY_F(5):
+           //TODO: add back in
            //set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
            //set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[++account_list_index % 9]);
         break;
@@ -258,9 +259,10 @@ void driver_payment_screen( int ch ) {
             form_driver(form, REQ_PREV_FIELD);
             move(LINES-3, 2);
 
-            //if( transaction_json_generated() == SUCCESS ) {
+            //TODO: add back in
+            if( payment_json_generated() == SUCCESS ) {
             //  set_transaction_default_values();
-            //}
+            }
 
             refresh();
             pos_form_cursor(form);
@@ -417,11 +419,35 @@ void show_payment_insert_screen() {
     curs_set(1);
     mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F4/F5 back/forward account");
 
+    fields[0] = new_field(1, label_length, TRANSACTION_DATE_IDX * 2, 0, 0, 0);
+    fields[1] = new_field(1, text_length, TRANSACTION_DATE_IDX * 2, label_length + 1, 0, 0);
+    fields[2] = new_field(1, label_length, AMOUNT_IDX * 2, 0, 0, 0);
+    fields[3] = new_field(1, text_length, AMOUNT_IDX * 2, label_length + 1, 0, 0);
+    fields[4] = new_field(1, label_length, ACCOUNT_NAME_OWNER_IDX * 2, 0, 0, 0);
+    fields[5] = new_field(1, text_length, ACCOUNT_NAME_OWNER_IDX * 2, label_length + 1, 0, 0);
+    fields[6] = NULL;
+
+    for( int idx = 0; idx < 6; idx++ ) {
+      assert(fields[idx] != NULL);
+    }
+
+    set_payment_default_values();
+
+    for( int idx = 0; idx < 3; idx++ ) {
+      set_field_opts(fields[idx * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
+      set_field_opts(fields[idx * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
+      set_field_back(fields[idx * 2 + 1], A_UNDERLINE);
+    }
+
+    form = new_form(fields);
+    assert(form != NULL);
+    set_form_win(form, win_form);
+    set_form_sub(form, derwin(win_form, 18, 76, 1, 1));
+    post_form(form);
+
     refresh();
     wrefresh(win_body);
     wrefresh(win_form);
-
-    //TODO: add more details
 
     while ((ch = getch()) != 27) { //escape = 27
         driver_payment_screen(ch);
@@ -474,31 +500,11 @@ void show_transaction_insert_screen() {
 
     set_transaction_default_values();
 
-    set_field_opts(fields[TRANSACTION_DATE_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-    set_field_opts(fields[TRANSACTION_DATE_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
-    set_field_opts(fields[DESCRIPTION_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-    set_field_opts(fields[DESCRIPTION_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
-    set_field_opts(fields[CATEGORY_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-    set_field_opts(fields[CATEGORY_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
-    set_field_opts(fields[AMOUNT_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-    set_field_opts(fields[AMOUNT_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
-    set_field_opts(fields[CLEARED_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-    set_field_opts(fields[CLEARED_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
-    set_field_opts(fields[NOTES_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-    set_field_opts(fields[NOTES_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
-    set_field_opts(fields[ACCOUNT_NAME_OWNER_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-    set_field_opts(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
-    set_field_opts(fields[ACCOUNT_TYPE_IDX * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-    set_field_opts(fields[ACCOUNT_TYPE_IDX * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
-
-    set_field_back(fields[TRANSACTION_DATE_IDX * 2 + 1], A_UNDERLINE);
-    set_field_back(fields[DESCRIPTION_IDX * 2 + 1], A_UNDERLINE);
-    set_field_back(fields[CATEGORY_IDX * 2 + 1], A_UNDERLINE);
-    set_field_back(fields[AMOUNT_IDX * 2 + 1], A_UNDERLINE);
-    set_field_back(fields[CLEARED_IDX * 2 + 1], A_UNDERLINE);
-    set_field_back(fields[NOTES_IDX * 2 + 1], A_UNDERLINE);
-    set_field_back(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], A_UNDERLINE);
-    set_field_back(fields[ACCOUNT_TYPE_IDX * 2 + 1], A_UNDERLINE);
+    for( int idx = 0; idx < 8; idx++ ) {
+      set_field_opts(fields[idx * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
+      set_field_opts(fields[idx * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
+      set_field_back(fields[idx * 2 + 1], A_UNDERLINE);
+    }
 
     form = new_form(fields);
     assert(form != NULL);
