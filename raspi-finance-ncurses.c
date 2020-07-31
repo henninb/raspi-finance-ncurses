@@ -22,6 +22,7 @@
 #define DATE_ADDED "dateAdded"
 
 #define TRANSACTION_INSERT_URL "http://localhost:8080/transaction/insert"
+#define PAYMENT_INSERT_URL "http://localhost:8080/payment/insert"
 
 #define SUCCESS 0
 #define FAILURE 1
@@ -41,6 +42,9 @@ struct string {
   char *ptr;
   size_t len;
 };
+
+char account_list[50][20] = {"chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian" };
+
 
 static FORM *form = NULL;
 static FIELD *fields[17];
@@ -100,7 +104,7 @@ size_t write_response_to_string( void *ptr, size_t size, size_t nmemb, struct st
   return size*nmemb;
 }
 
-int curl_post_call( char *payload ) {
+int curl_post_call( char *payload, char *type ) {
     CURL *curl = curl_easy_init();
     CURLcode result;
     struct curl_slist *headers = NULL;
@@ -116,7 +120,15 @@ int curl_post_call( char *payload ) {
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response_to_string);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    curl_easy_setopt(curl, CURLOPT_URL, TRANSACTION_INSERT_URL);
+    if( strncmp("transaction", type, 11) == 0) {
+      curl_easy_setopt(curl, CURLOPT_URL, TRANSACTION_INSERT_URL);
+    } else if( strncmp("payment", type, 7) == 0) {
+      curl_easy_setopt(curl, CURLOPT_URL, PAYMENT_INSERT_URL);
+    } else {
+      printw("invalid type.");
+      free(response.ptr);
+      return FAILURE;
+    }
     result = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
     if( strcmp(response.ptr, "transaction inserted") == 0) {
@@ -198,11 +210,9 @@ int transaction_json_generated() {
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", NOTES, extract_field(fields[NOTES_IDX * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, extract_field(fields[ACCOUNT_TYPE_IDX * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_ADDED, (unsigned long)time(NULL) * 1000);
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_UPDATED, (unsigned long)time(NULL) * 1000);
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
     snprintf(payload + strlen(payload), sizeof(payload), "}");
-    int result = curl_post_call(payload);
+    int result = curl_post_call(payload, "transaction");
     //wclear(win_body);
     //printw("%s", payload);
     return result;
@@ -210,38 +220,18 @@ int transaction_json_generated() {
 
 int payment_json_generated() {
     char payload[500] = {0};
-    uuid_t binuuid;
-    char uuid[37] = {0};
-
-    uuid_generate_random(binuuid);
-    uuid_unparse_lower(binuuid, uuid);
-    uuid_unparse(binuuid, uuid);
-
-    for( int idx = 0; uuid[idx]; idx++ ) {
-      uuid[idx] = tolower(uuid[idx]);
-    }
 
     snprintf(payload + strlen(payload), sizeof(payload), "{");
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", TRANSACTION_DATE, extract_field(fields[1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", DESCRIPTION, "payment");
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", CATEGORY, "bill_pay");
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extract_field(fields[3]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", CLEARED, "0");
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", NOTES, "note");
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, "credit");
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[5]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_ADDED, (unsigned long)time(NULL) * 1000);
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%lu,", DATE_UPDATED, (unsigned long)time(NULL) * 1000);
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", ACCOUNT_NAME_OWNER, extract_field(fields[5]));
     snprintf(payload + strlen(payload), sizeof(payload), "}");
-    int result = curl_post_call(payload);
-    printw("%s", payload);
+    int result = curl_post_call(payload, "payment");
+    //printw("%s", payload);
     return result;
 }
 
 void driver_payment_screen( int ch ) {
-    char account_list[50][20] = {"chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian" };
-
     switch (ch) {
         case KEY_F(4):
            set_field_buffer(fields[5], 0, "");
@@ -257,9 +247,8 @@ void driver_payment_screen( int ch ) {
             form_driver(form, REQ_PREV_FIELD);
             move(LINES-3, 2);
 
-            //TODO: add back in
             if( payment_json_generated() == SUCCESS ) {
-            //  set_transaction_default_values();
+              set_payment_default_values();
             }
 
             refresh();
@@ -304,8 +293,6 @@ void driver_payment_screen( int ch ) {
 }
 
 void driver_transaction_screen( int ch ) {
-    char account_list[50][20] = {"chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian" };
-
     switch (ch) {
         case KEY_F(4):
            set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
@@ -453,7 +440,6 @@ void show_payment_insert_screen() {
 
   cleanup_payment_screen();
   show_main_screen();
-
 }
 
 void show_transaction_insert_screen() {
