@@ -36,6 +36,34 @@
 #define CLEARED_IDX 6
 #define NOTES_IDX 7
 
+//https://riptutorial.com/c/example/6564/typedef-enum
+typedef enum {
+    transaction_account_name_owner,
+    transaction_account_type,
+    transaction_transaction_date,
+    transaction_description,
+    transaction_category,
+    transaction_amount,
+    transaction_cleared,
+    transaction_notes,
+    transaction_size
+} transaction_idx;
+
+enum payment_idx {
+    account_name_owner,
+    transaction_date,
+    amount,
+    payment_size
+} payment_idx;
+
+typedef enum  {
+transaction, payment, quit, menu_idx_size
+} menu_idx;
+
+typedef enum  {
+transaction_type, payment_type, menu_type_size
+} menu_type;
+
 #define MAIN_MENU_LIST_SIZE 3
 
 struct string {
@@ -43,7 +71,12 @@ struct string {
   size_t len;
 };
 
-char account_list[50][20] = {"chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian" };
+//type make that enum
+
+//needs some tlc
+static const char *account_list[] = {
+    "chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian"
+};
 
 static FORM *form = NULL;
 static FIELD *fields[17];
@@ -103,7 +136,7 @@ size_t write_response_to_string( void *ptr, size_t size, size_t nmemb, struct st
   return size*nmemb;
 }
 
-int curl_post_call( char *payload, char *type ) {
+int curl_post_call( char *payload, menu_type menu_type_item ) {
     CURL *curl = curl_easy_init();
     CURLcode result;
     struct curl_slist *headers = NULL;
@@ -119,10 +152,14 @@ int curl_post_call( char *payload, char *type ) {
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response_to_string);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    if( strncmp("transaction", type, 11) == 0) {
+    //if( strncmp("transaction", type, 11) == 0) {
+    if( menu_type_item == transaction_type ) {
       curl_easy_setopt(curl, CURLOPT_URL, TRANSACTION_INSERT_URL);
-    } else if( strncmp("payment", type, 7) == 0) {
+      printw("transaction:");
+    //} else if( strncmp("payment", type, 7) == 0) {
+    } else if( menu_type_item == payment_type ) {
       curl_easy_setopt(curl, CURLOPT_URL, PAYMENT_INSERT_URL);
+      printw("payment:");
     } else {
       printw("invalid type.");
       free(response.ptr);
@@ -211,7 +248,7 @@ int transaction_json_generated() {
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
     snprintf(payload + strlen(payload), sizeof(payload), "}");
-    int result = curl_post_call(payload, "transaction");
+    int result = curl_post_call(payload, transaction_type);
     //wclear(win_body);
     //printw("%s", payload);
     return result;
@@ -225,7 +262,7 @@ int payment_json_generated() {
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extract_field(fields[3]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", ACCOUNT_NAME_OWNER, extract_field(fields[5]));
     snprintf(payload + strlen(payload), sizeof(payload), "}");
-    int result = curl_post_call(payload, "payment");
+    int result = curl_post_call(payload, payment_type);
     //printw("%s", payload);
     return result;
 }
