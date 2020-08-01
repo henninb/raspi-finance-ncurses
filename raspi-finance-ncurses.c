@@ -45,7 +45,6 @@ struct string {
 
 char account_list[50][20] = {"chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian" };
 
-
 static FORM *form = NULL;
 static FIELD *fields[17];
 static WINDOW *win_body = NULL;
@@ -231,76 +230,32 @@ int payment_json_generated() {
     return result;
 }
 
-void driver_payment_screen( int ch ) {
-    switch (ch) {
-        case KEY_F(4):
-           set_field_buffer(fields[5], 0, "");
-           set_field_buffer(fields[5], 0, account_list[--account_list_index % 9]);
-        break;
-        case KEY_F(5):
-           set_field_buffer(fields[5], 0, "");
-           set_field_buffer(fields[5], 0, account_list[++account_list_index % 9]);
-        break;
-        case KEY_F(2):
-            // Or the current field buffer won't be sync with what is displayed
-            form_driver(form, REQ_NEXT_FIELD);
-            form_driver(form, REQ_PREV_FIELD);
-            move(LINES-3, 2);
-
-            if( payment_json_generated() == SUCCESS ) {
-              set_payment_default_values();
-            }
-
-            refresh();
-            pos_form_cursor(form);
-            break;
-        case 353: //shift tab
-            form_driver(form, REQ_PREV_FIELD);
-            break;
-        case KEY_DOWN:
-            form_driver(form, REQ_NEXT_FIELD);
-            form_driver(form, REQ_END_LINE);
-            break;
-        case '\t':
-        case '\n':
-            form_driver(form, REQ_NEXT_FIELD);
-            break;
-        case KEY_UP:
-            form_driver(form, REQ_PREV_FIELD);
-            form_driver(form, REQ_END_LINE);
-            break;
-        case KEY_LEFT:
-            form_driver(form, REQ_PREV_CHAR);
-            break;
-        case KEY_RIGHT:
-            form_driver(form, REQ_NEXT_CHAR);
-            break;
-        // Delete the char before cursor
-        case KEY_BACKSPACE:
-        case 127:
-            form_driver(form, REQ_DEL_PREV);
-            break;
-        // Delete the char under the cursor
-        case KEY_DC:
-            form_driver(form, REQ_DEL_CHAR);
-            break;
-        default:
-            form_driver(form, ch);
-            break;
-    }
-
-    wrefresh(win_form);
+void account_name_rotate_forward( int idx ) {
+    set_field_buffer(fields[idx * 2 + 1], 0, "");
+    set_field_buffer(fields[idx * 2 + 1], 0, account_list[++account_list_index % 9]);
 }
 
-void driver_transaction_screen( int ch ) {
+void account_name_rotate_backward( int idx ) {
+   set_field_buffer(fields[idx * 2 + 1], 0, "");
+   set_field_buffer(fields[idx * 2 + 1], 0, account_list[++account_list_index % 9]);
+}
+
+void driver_screens( int ch, char *type ) {
     switch (ch) {
         case KEY_F(4):
-           set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
-           set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[--account_list_index % 9]);
+            if( strncmp("transaction", type, 11) == 0) {
+              account_name_rotate_backward(ACCOUNT_NAME_OWNER_IDX);
+            } else if( strncmp("payment", type, 7) == 0) {
+              account_name_rotate_backward(2);
+            }
+
         break;
         case KEY_F(5):
-           set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
-           set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, account_list[++account_list_index % 9]);
+            if( strncmp("transaction", type, 11) == 0) {
+              account_name_rotate_forward(ACCOUNT_NAME_OWNER_IDX);
+            } else if( strncmp("payment", type, 7) == 0) {
+              account_name_rotate_forward(2);
+            }
         break;
         case KEY_F(2):
             // Or the current field buffer won't be sync with what is displayed
@@ -308,8 +263,14 @@ void driver_transaction_screen( int ch ) {
             form_driver(form, REQ_PREV_FIELD);
             move(LINES-3, 2);
 
-            if( transaction_json_generated() == SUCCESS ) {
-              set_transaction_default_values();
+            if( strncmp("transaction", type, 11) == 0) {
+                if( transaction_json_generated() == SUCCESS ) {
+                  set_transaction_default_values();
+                }
+            } else if( strncmp("payment", type, 7) == 0) {
+                if( payment_json_generated() == SUCCESS ) {
+                  set_payment_default_values();
+                }
             }
 
             refresh();
@@ -435,7 +396,7 @@ void show_payment_insert_screen() {
     wrefresh(win_form);
 
     while ((ch = getch()) != 27) { //escape = 27
-        driver_payment_screen(ch);
+        driver_screens(ch, "payment");
     }
 
   cleanup_payment_screen();
@@ -502,7 +463,7 @@ void show_transaction_insert_screen() {
 
     //while ((ch = wgetch(win_body)) != 27) { //escape = 27
     while ((ch = getch()) != 27) { //escape = 27
-        driver_transaction_screen(ch);
+        driver_screens(ch, "transaction");
     }
 
   cleanup_transaction_screen();
