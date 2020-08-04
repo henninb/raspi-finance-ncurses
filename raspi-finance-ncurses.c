@@ -65,19 +65,20 @@ typedef enum  {
 transaction_type, payment_type, menu_type_size
 } menu_type;
 
-#define MAIN_MENU_LIST_SIZE 3
-
 struct string {
   char *ptr;
   size_t len;
 };
 
+static const char *menu_list[] = {"transaction", "payment", "quit" };
 //type make that enum
 
 //needs some tlc
 static const char *account_list[] = {
     "chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian"
 };
+
+//static const char
 
 static FORM *form = NULL;
 static FIELD *fields[17];
@@ -280,13 +281,17 @@ int payment_json_generated() {
 }
 
 void account_name_rotate_forward( int idx ) {
+    int account_list_size = sizeof(account_list)/sizeof(account_list[0]);
+
     set_field_buffer(fields[idx * 2 + 1], 0, "");
-    set_field_buffer(fields[idx * 2 + 1], 0, account_list[++account_list_index % 9]);
+    set_field_buffer(fields[idx * 2 + 1], 0, account_list[++account_list_index % account_list_size]);
 }
 
 void account_name_rotate_backward( int idx ) {
+   int account_list_size = sizeof(account_list)/sizeof(account_list[0]);
+
    set_field_buffer(fields[idx * 2 + 1], 0, "");
-   set_field_buffer(fields[idx * 2 + 1], 0, account_list[++account_list_index % 9]);
+   set_field_buffer(fields[idx * 2 + 1], 0, account_list[++account_list_index % account_list_size]);
 }
 
 void driver_screens( int ch, char *type ) {
@@ -520,11 +525,10 @@ void show_transaction_insert_screen() {
 }
 
 void show_main_screen() {
-    //int list_size = 6;
-    char list[MAIN_MENU_LIST_SIZE][12] = { "transaction", "payment", "quit" };
     char item[12] = {0};
     int ch = 0;
     int idx = 0;
+    int menu_list_size = sizeof(menu_list)/sizeof(menu_list[0]);
 
     initscr(); // initialize Ncurses
     //win_main_menu = newwin(10, 15, 1, 1); // create a new window
@@ -533,13 +537,13 @@ void show_main_screen() {
     box(win_main_menu, 0, 0); // sets default borders for the window
 
 // now print all the menu items and highlight the first one
-    for( idx = 0; idx < MAIN_MENU_LIST_SIZE; idx++ ) {
+    for( idx = 0; idx < menu_list_size; idx++ ) {
         if( idx == 0 ) {
             wattron(win_main_menu, A_STANDOUT); // highlights the first item.
         } else {
             wattroff(win_main_menu, A_STANDOUT);
         }
-        snprintf(item, sizeof(item), "%s", list[idx]);
+        snprintf(item, sizeof(item), "%s", menu_list[idx]);
         mvwprintw(win_main_menu, idx + 1, 2, "%s", item);
     }
 
@@ -552,13 +556,13 @@ void show_main_screen() {
 
     ch = wgetch(win_main_menu);
     while( ch != 27 ) {
-        snprintf(item, sizeof(item), "%s",  list[idx]);
+        snprintf(item, sizeof(item), "%s",  menu_list[idx]);
         mvwprintw(win_main_menu, idx + 1, 2, "%s", item );
         switch( ch ) {
             case KEY_UP:
             case 'k':
                 idx--;
-                idx = ( idx < 0 ) ? (MAIN_MENU_LIST_SIZE-1) : idx;
+                idx = ( idx < 0 ) ? (menu_list_size-1) : idx;
                 break;
             case '\n':
                 if( idx == 0 ) {
@@ -585,14 +589,14 @@ void show_main_screen() {
             case KEY_DOWN:
             case 'j':
                 idx++;
-                idx = ( idx > (MAIN_MENU_LIST_SIZE-1) ) ? 0 : idx;
+                idx = ( idx > (menu_list_size-1) ) ? 0 : idx;
                 break;
         }
         // now highlight the next item in the list.
         wattron(win_main_menu, A_STANDOUT);
 
         //sprintf(item, "%-7s",  list[i]);
-        snprintf(item, sizeof(item), "%s",  list[idx]);
+        snprintf(item, sizeof(item), "%s",  menu_list[idx]);
         mvwprintw(win_main_menu, idx + 1, 2, "%s", item);
         wattroff(win_main_menu, A_STANDOUT);
 
