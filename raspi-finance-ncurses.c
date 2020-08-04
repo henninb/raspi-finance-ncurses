@@ -8,6 +8,7 @@
 #include <time.h>
 #include <curl/curl.h>
 #include <uuid/uuid.h>
+#include <cjson/cJSON.h>
 
 #define TRANSACTION_DATE "transactionDate"
 #define ACCOUNT_NAME_OWNER "accountNameOwner"
@@ -224,6 +225,12 @@ void set_payment_default_values() {
     set_field_buffer(fields[5], 0, "");
 }
 
+//void string_to_lower( char *str ) {
+//    for( int idx = 0; uuid[idx]; idx++ ) {
+//      uuid[idx] = tolower(uuid[idx]);
+//    }
+//}
+
 int transaction_json_generated() {
     char payload[500] = {0};
     uuid_t binuuid;
@@ -233,6 +240,7 @@ int transaction_json_generated() {
     uuid_unparse_lower(binuuid, uuid);
     uuid_unparse(binuuid, uuid);
 
+    //TODO: is the logic correct?
     for( int idx = 0; uuid[idx]; idx++ ) {
       uuid[idx] = tolower(uuid[idx]);
     }
@@ -248,6 +256,10 @@ int transaction_json_generated() {
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
     snprintf(payload + strlen(payload), sizeof(payload), "}");
+
+    //TODO: add json logic
+    cJSON *json = cJSON_ParseWithLength(payload, sizeof(payload));
+
     int result = curl_post_call(payload, transaction_type);
     //wclear(win_body);
     //printw("%s", payload);
