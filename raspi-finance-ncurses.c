@@ -448,12 +448,17 @@ void show_payment_insert_screen() {
     curs_set(1);
     mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F4/F5 back/forward account");
 
-    fields[PAYMENT_TRANSACTION_DATE * 2] = new_field(1, label_length, PAYMENT_TRANSACTION_DATE * 2, 0, 0, 0);
-    fields[PAYMENT_TRANSACTION_DATE * 2 + 1] = new_field(1, text_length, PAYMENT_TRANSACTION_DATE * 2, label_length + 1, 0, 0);
-    fields[PAYMENT_AMOUNT * 2] = new_field(1, label_length, PAYMENT_AMOUNT * 2, 0, 0, 0);
-    fields[PAYMENT_AMOUNT * 2 + 1] = new_field(1, text_length, PAYMENT_AMOUNT * 2, label_length + 1, 0, 0);
-    fields[PAYMENT_ACCOUNT_NAME_OWNER * 2] = new_field(1, label_length, PAYMENT_ACCOUNT_NAME_OWNER * 2, 0, 0, 0);
-    fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1] = new_field(1, text_length, PAYMENT_ACCOUNT_NAME_OWNER * 2, label_length + 1, 0, 0);
+    for( int idx = 0; idx < MAX_PAYMENT; idx++ ) {
+        fields[idx * 2] = new_field(1, label_length, idx * 2, 0, 0, 0);
+        fields[idx * 2 + 1] = new_field(1, text_length, idx * 2, label_length + 1, 0, 0);
+    }
+
+//    fields[PAYMENT_TRANSACTION_DATE * 2] = new_field(1, label_length, PAYMENT_TRANSACTION_DATE * 2, 0, 0, 0);
+//    fields[PAYMENT_TRANSACTION_DATE * 2 + 1] = new_field(1, text_length, PAYMENT_TRANSACTION_DATE * 2, label_length + 1, 0, 0);
+//    fields[PAYMENT_AMOUNT * 2] = new_field(1, label_length, PAYMENT_AMOUNT * 2, 0, 0, 0);
+//    fields[PAYMENT_AMOUNT * 2 + 1] = new_field(1, text_length, PAYMENT_AMOUNT * 2, label_length + 1, 0, 0);
+//    fields[PAYMENT_ACCOUNT_NAME_OWNER * 2] = new_field(1, label_length, PAYMENT_ACCOUNT_NAME_OWNER * 2, 0, 0, 0);
+//    fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1] = new_field(1, text_length, PAYMENT_ACCOUNT_NAME_OWNER * 2, label_length + 1, 0, 0);
     fields[MAX_PAYMENT * 2] = NULL;
 
     for( int idx = 0; idx < MAX_PAYMENT * 2; idx++ ) {
@@ -504,22 +509,27 @@ void show_transaction_insert_screen() {
     curs_set(1);
     mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F4/F5 back/forward account");
 
-    fields[TRANSACTION_TRANSACTION_DATE * 2] = new_field(1, label_length, TRANSACTION_TRANSACTION_DATE * 2, 0, 0, 0);
-    fields[TRANSACTION_TRANSACTION_DATE * 2 + 1] = new_field(1, text_length, TRANSACTION_TRANSACTION_DATE * 2, label_length + 1, 0, 0);
-    fields[TRANSACTION_DESCRIPTION * 2] = new_field(1, label_length, TRANSACTION_DESCRIPTION * 2, 0, 0, 0);
-    fields[TRANSACTION_DESCRIPTION * 2 + 1] = new_field(1, text_length, TRANSACTION_DESCRIPTION * 2, label_length + 1, 0, 0);
-    fields[TRANSACTION_CATEGORY * 2] = new_field(1, label_length, TRANSACTION_CATEGORY * 2, 0, 0, 0);
-    fields[TRANSACTION_CATEGORY * 2 + 1] = new_field(1, text_length, TRANSACTION_CATEGORY * 2, label_length + 1, 0, 0);
-    fields[TRANSACTION_AMOUNT * 2] = new_field(1, label_length, TRANSACTION_AMOUNT * 2, 0, 0, 0);
-    fields[TRANSACTION_AMOUNT * 2 + 1] = new_field(1, text_length, TRANSACTION_AMOUNT * 2, label_length + 1, 0, 0);
-    fields[TRANSACTION_CLEARED * 2] = new_field(1, label_length, TRANSACTION_CLEARED * 2, 0, 0, 0);
-    fields[TRANSACTION_CLEARED * 2 + 1] = new_field(1, text_length, TRANSACTION_CLEARED * 2, label_length + 1, 0, 0);
-    fields[TRANSACTION_NOTES * 2] = new_field(1, label_length, TRANSACTION_NOTES * 2, 0, 0, 0);
-    fields[TRANSACTION_NOTES * 2 + 1] = new_field(1, text_length, TRANSACTION_NOTES * 2, label_length + 1, 0, 0);
-    fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2] = new_field(1, label_length, TRANSACTION_ACCOUNT_NAME_OWNER * 2, 0, 0, 0);
-    fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2 + 1] = new_field(1, text_length, TRANSACTION_ACCOUNT_NAME_OWNER * 2, label_length + 1, 0, 0);
-    fields[TRANSACTION_ACCOUNT_TYPE * 2] = new_field(1, label_length, TRANSACTION_ACCOUNT_TYPE * 2, 0, 0, 0);
-    fields[TRANSACTION_ACCOUNT_TYPE * 2 + 1] = new_field(1, text_length, TRANSACTION_ACCOUNT_TYPE * 2, label_length + 1, 0, 0);
+    for( int idx = 0; idx < MAX_TRANSACTION; idx++ ) {
+        fields[idx * 2] = new_field(1, label_length, idx * 2, 0, 0, 0);
+        fields[idx * 2 + 1] = new_field(1, text_length, idx * 2, label_length + 1, 0, 0);
+    }
+
+//    fields[TRANSACTION_TRANSACTION_DATE * 2] = new_field(1, label_length, TRANSACTION_TRANSACTION_DATE * 2, 0, 0, 0);
+//    fields[TRANSACTION_TRANSACTION_DATE * 2 + 1] = new_field(1, text_length, TRANSACTION_TRANSACTION_DATE * 2, label_length + 1, 0, 0);
+//    fields[TRANSACTION_DESCRIPTION * 2] = new_field(1, label_length, TRANSACTION_DESCRIPTION * 2, 0, 0, 0);
+//    fields[TRANSACTION_DESCRIPTION * 2 + 1] = new_field(1, text_length, TRANSACTION_DESCRIPTION * 2, label_length + 1, 0, 0);
+//    fields[TRANSACTION_CATEGORY * 2] = new_field(1, label_length, TRANSACTION_CATEGORY * 2, 0, 0, 0);
+//    fields[TRANSACTION_CATEGORY * 2 + 1] = new_field(1, text_length, TRANSACTION_CATEGORY * 2, label_length + 1, 0, 0);
+//    fields[TRANSACTION_AMOUNT * 2] = new_field(1, label_length, TRANSACTION_AMOUNT * 2, 0, 0, 0);
+//    fields[TRANSACTION_AMOUNT * 2 + 1] = new_field(1, text_length, TRANSACTION_AMOUNT * 2, label_length + 1, 0, 0);
+//    fields[TRANSACTION_CLEARED * 2] = new_field(1, label_length, TRANSACTION_CLEARED * 2, 0, 0, 0);
+//    fields[TRANSACTION_CLEARED * 2 + 1] = new_field(1, text_length, TRANSACTION_CLEARED * 2, label_length + 1, 0, 0);
+//    fields[TRANSACTION_NOTES * 2] = new_field(1, label_length, TRANSACTION_NOTES * 2, 0, 0, 0);
+//    fields[TRANSACTION_NOTES * 2 + 1] = new_field(1, text_length, TRANSACTION_NOTES * 2, label_length + 1, 0, 0);
+//    fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2] = new_field(1, label_length, TRANSACTION_ACCOUNT_NAME_OWNER * 2, 0, 0, 0);
+//    fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2 + 1] = new_field(1, text_length, TRANSACTION_ACCOUNT_NAME_OWNER * 2, label_length + 1, 0, 0);
+//    fields[TRANSACTION_ACCOUNT_TYPE * 2] = new_field(1, label_length, TRANSACTION_ACCOUNT_TYPE * 2, 0, 0, 0);
+//    fields[TRANSACTION_ACCOUNT_TYPE * 2 + 1] = new_field(1, text_length, TRANSACTION_ACCOUNT_TYPE * 2, label_length + 1, 0, 0);
     fields[MAX_TRANSACTION * 2] = NULL;
 
     for( int idx = 0; idx < MAX_TRANSACTION * 2; idx++ ) {
