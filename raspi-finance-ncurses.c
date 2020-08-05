@@ -28,93 +28,106 @@
 #define SUCCESS 0
 #define FAILURE 1
 
-#define ACCOUNT_NAME_OWNER_IDX 0
-#define ACCOUNT_TYPE_IDX 1
-#define TRANSACTION_DATE_IDX 2
-#define DESCRIPTION_IDX 3
-#define CATEGORY_IDX 4
-#define AMOUNT_IDX 5
-#define CLEARED_IDX 6
-#define NOTES_IDX 7
-
 //https://riptutorial.com/c/example/6564/typedef-enum
 typedef enum {
-    transaction_account_name_owner,
-    transaction_account_type,
-    transaction_transaction_date,
-    transaction_description,
-    transaction_category,
-    transaction_amount,
-    transaction_cleared,
-    transaction_notes,
-    transaction_size
-} transaction_idx;
+    TRANSACTION_ACCOUNT_NAME_OWNER = 0,
+    TRANSACTION_ACCOUNT_TYPE,
+    TRANSACTION_TRANSACTION_DATE,
+    TRANSACTION_DESCRIPTION,
+    TRANSACTION_CATEGORY,
+    TRANSACTION_AMOUNT,
+    TRANSACTION_CLEARED,
+    TRANSACTION_NOTES,
 
-enum payment_idx {
-    account_name_owner,
-    transaction_date,
-    amount,
-    payment_size
-} payment_idx;
+    MAX_TRANSACTION
+} TransactionIndex;
 
-typedef enum  {
-transaction, payment, quit, menu_idx_size
-} menu_idx;
+typedef enum {
+    PAYMENT_ACCOUNT_NAME_OWNER = 0,
+    PAYMENT_TRANSACTION_DATE,
+    PAYMENT_AMOUNT,
 
-typedef enum  {
-transaction_type, payment_type, menu_type_size
-} menu_type;
+    MAX_PAYMENT
+} PaymentIndex;
 
-struct string {
-  char *ptr;
-  size_t len;
-};
+typedef enum {
+    MENU_TRANSACTION = 0,
+    MENU_PAYMENT,
+    MENU_QUIT,
 
-static const char *menu_list[] = {"transaction", "payment", "quit" };
+    MAX_MENU
+} MenuIndex;
+
+typedef enum {
+    MENU_TYPE_TRANSACTION = 0,
+    MENU_TYPE_PAYMENT,
+
+    MAX_MENU_TYPE
+} MenuType;
+
+typedef struct {
+    char *ptr;
+    size_t len;
+} String;
+
 //type make that enum
+static const char *menu_list[] = {"transaction", "payment", "quit"};
 
 //needs some tlc
 static const char *account_list[] = {
-    "chase_brian", "chase_brian", "usbank-cash_brian", "usbank-cash_kari", "amex_brian", "amex_kari", "barclays_kari", "barclays_brian", "citicash_brian"
+    "amex_brian", "amex_kari", "barclays_brian", "barclays_kari", "chase_brian", "chase_kari" , "citicash_brian", "usbank-cash_brian", "usbank-cash_kari",
 };
 
-//static const char
-
 static FORM *form = NULL;
-static FIELD *fields[17];
+static FIELD *fields[MAX_TRANSACTION * 2 + 1];
 static WINDOW *win_body = NULL;
 static WINDOW *win_form = NULL;
 static WINDOW *win_main_menu = NULL;
 
-int account_list_index = 0;
+int current_account_list_index = 0;
 
 void show_main_screen();
 void show_transaction_insert_screen();
 void set_transaction_default_values();
+void account_name_rotate_backward( int );
+void account_name_rotate_forward( int );
+void cleanup_payment_screen();
+void cleanup_transaction_screen();
+void driver_screens( int, char * );
+void init_string( String * );
+void set_payment_default_values();
+void show_payment_insert_screen();
+char * extract_field( const FIELD * );
+char * trim_whitespaces( char * );
+int curl_post_call( char *, MenuType );
+int payment_json_generated();
+int transaction_json_generated();
 
 char * trim_whitespaces( char *str ) {
     char *end = NULL;
+    char *trimmed = str;
 
-    while(isspace(*str)) {
-        str++;
+    while( isspace(*trimmed) ) {
+        trimmed++;
     }
 
-    if(*str == 0) {
-        return str;
+    if( *trimmed == '\0' ) {
+        return trimmed;
     }
 
-    end = str + strnlen(str, 128) - 1;
-    while(end > str && isspace(*end)) {
+    end = trimmed + strnlen(trimmed, 128) - 1;
+    while(end > trimmed && isspace(*end)) {
       end--;
     }
 
-    *(end+1) = '\0';
+    *(end + 1) = '\0';
 
-    return str;
+    return trimmed;
 }
 
-void init_string( struct string *s ) {
+void init_string( String *s ) {
   s->len = 0;
+  //use calloc
   s->ptr = malloc(1);
   if (s->ptr == NULL) {
     fprintf(stderr, "malloc() failed\n");
@@ -123,7 +136,7 @@ void init_string( struct string *s ) {
   s->ptr[0] = '\0';
 }
 
-size_t write_response_to_string( void *ptr, size_t size, size_t nmemb, struct string *s ) {
+size_t write_response_to_string( void *ptr, size_t size, size_t nmemb, String *s ) {
   size_t new_len = s->len + size*nmemb;
   s->ptr = realloc(s->ptr, new_len + 1);
   if (s->ptr == NULL) {
@@ -138,11 +151,11 @@ size_t write_response_to_string( void *ptr, size_t size, size_t nmemb, struct st
   return size*nmemb;
 }
 
-int curl_post_call( char *payload, menu_type menu_type_item ) {
+int curl_post_call( char *payload, MenuType menu_type ) {
     CURL *curl = curl_easy_init();
     CURLcode result;
     struct curl_slist *headers = NULL;
-    struct string response = {0};
+    String response = {0};
     init_string(&response);
 
     headers = curl_slist_append(headers, "Accept: application/json");
@@ -154,17 +167,16 @@ int curl_post_call( char *payload, menu_type menu_type_item ) {
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response_to_string);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    //if( strncmp("transaction", type, 11) == 0) {
-    if( menu_type_item == transaction_type ) {
+    if( menu_type == MENU_TYPE_TRANSACTION ) {
       curl_easy_setopt(curl, CURLOPT_URL, TRANSACTION_INSERT_URL);
       printw("transaction:");
-    //} else if( strncmp("payment", type, 7) == 0) {
-    } else if( menu_type_item == payment_type ) {
+    } else if( menu_type == MENU_TYPE_PAYMENT ) {
       curl_easy_setopt(curl, CURLOPT_URL, PAYMENT_INSERT_URL);
       printw("payment:");
     } else {
       printw("invalid type.");
       free(response.ptr);
+      response.ptr = NULL;
       return FAILURE;
     }
     result = curl_easy_perform(curl);
@@ -172,6 +184,7 @@ int curl_post_call( char *payload, menu_type menu_type_item ) {
     if( strcmp(response.ptr, "transaction inserted") == 0) {
       printw("200 - SUCCESS\n");
       free(response.ptr);
+      response.ptr = NULL;
       return SUCCESS;
     } else {
       if( response.len > 0) {
@@ -180,6 +193,7 @@ int curl_post_call( char *payload, menu_type menu_type_item ) {
         printw("failed to connect.");
       }
       free(response.ptr);
+      response.ptr = NULL;
       return FAILURE;
     }
 }
@@ -194,22 +208,22 @@ void set_transaction_default_values() {
 
     strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", localtime(&now));
 
-    set_field_buffer(fields[TRANSACTION_DATE_IDX * 2], 0, TRANSACTION_DATE);
-    set_field_buffer(fields[TRANSACTION_DATE_IDX * 2 + 1], 0, today_string);
-    set_field_buffer(fields[DESCRIPTION_IDX * 2], 0, DESCRIPTION);
-    set_field_buffer(fields[DESCRIPTION_IDX * 2 + 1], 0, "");
-    set_field_buffer(fields[CATEGORY_IDX * 2], 0, CATEGORY);
-    set_field_buffer(fields[CATEGORY_IDX * 2 + 1], 0, "");
-    set_field_buffer(fields[AMOUNT_IDX * 2], 0, AMOUNT);
-    set_field_buffer(fields[AMOUNT_IDX * 2 + 1], 0, "0.00");
-    set_field_buffer(fields[CLEARED_IDX * 2], 0, CLEARED);
-    set_field_buffer(fields[CLEARED_IDX * 2 + 1], 0, "0");
-    set_field_buffer(fields[NOTES_IDX * 2], 0, NOTES);
-    set_field_buffer(fields[NOTES_IDX * 2 + 1], 0, "");
-    set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2], 0, ACCOUNT_NAME_OWNER);
-    set_field_buffer(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1], 0, "");
-    set_field_buffer(fields[ACCOUNT_TYPE_IDX * 2], 0, ACCOUNT_TYPE);
-    set_field_buffer(fields[ACCOUNT_TYPE_IDX * 2 + 1], 0, "credit");
+    set_field_buffer(fields[TRANSACTION_TRANSACTION_DATE * 2], 0, TRANSACTION_DATE);
+    set_field_buffer(fields[TRANSACTION_TRANSACTION_DATE * 2 + 1], 0, today_string);
+    set_field_buffer(fields[TRANSACTION_DESCRIPTION * 2], 0, DESCRIPTION);
+    set_field_buffer(fields[TRANSACTION_DESCRIPTION * 2 + 1], 0, "");
+    set_field_buffer(fields[TRANSACTION_CATEGORY * 2], 0, CATEGORY);
+    set_field_buffer(fields[TRANSACTION_CATEGORY * 2 + 1], 0, "");
+    set_field_buffer(fields[TRANSACTION_AMOUNT * 2], 0, AMOUNT);
+    set_field_buffer(fields[TRANSACTION_AMOUNT * 2 + 1], 0, "0.00");
+    set_field_buffer(fields[TRANSACTION_CLEARED * 2], 0, CLEARED);
+    set_field_buffer(fields[TRANSACTION_CLEARED * 2 + 1], 0, "0");
+    set_field_buffer(fields[TRANSACTION_NOTES * 2], 0, NOTES);
+    set_field_buffer(fields[TRANSACTION_NOTES * 2 + 1], 0, "");
+    set_field_buffer(fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2], 0, ACCOUNT_NAME_OWNER);
+    set_field_buffer(fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2 + 1], 0, "");
+    set_field_buffer(fields[TRANSACTION_ACCOUNT_TYPE * 2], 0, ACCOUNT_TYPE);
+    set_field_buffer(fields[TRANSACTION_ACCOUNT_TYPE * 2 + 1], 0, "credit");
 }
 
 void set_payment_default_values() {
@@ -218,19 +232,13 @@ void set_payment_default_values() {
 
     strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", localtime(&now));
 
-    set_field_buffer(fields[0], 0, TRANSACTION_DATE);
-    set_field_buffer(fields[1], 0, today_string);
-    set_field_buffer(fields[2], 0, AMOUNT);
-    set_field_buffer(fields[3], 0, "0.00");
-    set_field_buffer(fields[4], 0, ACCOUNT_NAME_OWNER);
-    set_field_buffer(fields[5], 0, "");
+    set_field_buffer(fields[PAYMENT_TRANSACTION_DATE * 2], 0, TRANSACTION_DATE);
+    set_field_buffer(fields[PAYMENT_TRANSACTION_DATE * 2 + 1], 0, today_string);
+    set_field_buffer(fields[PAYMENT_AMOUNT * 2], 0, AMOUNT);
+    set_field_buffer(fields[PAYMENT_AMOUNT * 2 + 1], 0, "0.00");
+    set_field_buffer(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2], 0, ACCOUNT_NAME_OWNER);
+    set_field_buffer(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1], 0, "");
 }
-
-//void string_to_lower( char *str ) {
-//    for( int idx = 0; uuid[idx]; idx++ ) {
-//      uuid[idx] = tolower(uuid[idx]);
-//    }
-//}
 
 int transaction_json_generated() {
     char payload[500] = {0};
@@ -241,27 +249,26 @@ int transaction_json_generated() {
     uuid_unparse_lower(binuuid, uuid);
     uuid_unparse(binuuid, uuid);
 
-    //TODO: is the logic correct?
-    for( int idx = 0; uuid[idx]; idx++ ) {
+    for( int idx = 0; uuid[idx] != '\0'; idx++ ) {
       uuid[idx] = tolower(uuid[idx]);
     }
 
     snprintf(payload + strlen(payload), sizeof(payload), "{");
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", TRANSACTION_DATE, extract_field(fields[TRANSACTION_DATE_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", DESCRIPTION, extract_field(fields[DESCRIPTION_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", CATEGORY, extract_field(fields[CATEGORY_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extract_field(fields[AMOUNT_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", CLEARED, extract_field(fields[CLEARED_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", NOTES, extract_field(fields[NOTES_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, extract_field(fields[ACCOUNT_TYPE_IDX * 2 + 1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", TRANSACTION_DATE, extract_field(fields[TRANSACTION_TRANSACTION_DATE * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", DESCRIPTION, extract_field(fields[TRANSACTION_DESCRIPTION * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", CATEGORY, extract_field(fields[TRANSACTION_CATEGORY * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extract_field(fields[TRANSACTION_AMOUNT * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", CLEARED, extract_field(fields[TRANSACTION_CLEARED * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", NOTES, extract_field(fields[TRANSACTION_NOTES * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, extract_field(fields[TRANSACTION_ACCOUNT_TYPE * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
     snprintf(payload + strlen(payload), sizeof(payload), "}");
 
     //TODO: add json logic
     cJSON *json = cJSON_ParseWithLength(payload, sizeof(payload));
 
-    int result = curl_post_call(payload, transaction_type);
+    int result = curl_post_call(payload, MENU_TYPE_TRANSACTION);
     //wclear(win_body);
     //printw("%s", payload);
     return result;
@@ -269,46 +276,68 @@ int transaction_json_generated() {
 
 int payment_json_generated() {
     char payload[500] = {0};
-
-    snprintf(payload + strlen(payload), sizeof(payload), "{");
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", TRANSACTION_DATE, extract_field(fields[1]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extract_field(fields[3]));
-    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", ACCOUNT_NAME_OWNER, extract_field(fields[5]));
-    snprintf(payload + strlen(payload), sizeof(payload), "}");
-    int result = curl_post_call(payload, payment_type);
-    //printw("%s", payload);
-    return result;
-}
-
-void account_name_rotate_forward( int idx ) {
-    int account_list_size = sizeof(account_list)/sizeof(account_list[0]);
-
-    set_field_buffer(fields[idx * 2 + 1], 0, "");
-    set_field_buffer(fields[idx * 2 + 1], 0, account_list[++account_list_index % account_list_size]);
+    strncat(payload, "{", 1);
+    strncat(payload, "\"", 1);
+    strncat(payload, TRANSACTION_DATE, sizeof(TRANSACTION_DATE));
+    strncat(payload, "\":", 2);
+    strncat(payload, "\"", 1);
+    strncat(payload, extract_field(fields[PAYMENT_TRANSACTION_DATE * 2 + 1]), strlen(extract_field(fields[PAYMENT_TRANSACTION_DATE * 2 + 1])));
+    strncat(payload, "\",", 2);
+    strncat(payload, "\"", 1);
+    strncat(payload, AMOUNT, sizeof(AMOUNT));
+    strncat(payload, "\":", 2);
+    strncat(payload, "\"", 1);
+    strncat(payload, extract_field(fields[PAYMENT_AMOUNT * 2 + 1]), strlen(extract_field(fields[PAYMENT_AMOUNT * 2 + 1])));
+    strncat(payload, "\",", 2);
+    strncat(payload, "\"", 1);
+    strncat(payload, ACCOUNT_NAME_OWNER, sizeof(ACCOUNT_NAME_OWNER));
+    strncat(payload, "\":", 2);
+    strncat(payload, "\"", 1);
+    strncat(payload, extract_field(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1]), strlen(extract_field(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1])));
+    strncat(payload, "\"", 1);
+    strncat(payload, "}", 1);
+//    snprintf(payload + strlen(payload), sizeof(payload), "{");
+//    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", TRANSACTION_DATE, extract_field(fields[PAYMENT_TRANSACTION_DATE * 2 + 1]));
+//    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extract_field(fields[PAYMENT_AMOUNT * 2 + 1]));
+//    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", ACCOUNT_NAME_OWNER, extract_field(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1]));
+//    snprintf(payload + strlen(payload), sizeof(payload), "}");
+    //int result = curl_post_call(payload, payment_type);
+    printw("%s", payload);
+    //return result;
+    return 0;
 }
 
 void account_name_rotate_backward( int idx ) {
-   int account_list_size = sizeof(account_list)/sizeof(account_list[0]);
+   int account_list_size = sizeof(account_list)/sizeof(char *);
 
    set_field_buffer(fields[idx * 2 + 1], 0, "");
-   set_field_buffer(fields[idx * 2 + 1], 0, account_list[++account_list_index % account_list_size]);
+
+   current_account_list_index = (current_account_list_index > 0 ) ? current_account_list_index - 1 : account_list_size - 1;
+   set_field_buffer(fields[idx * 2 + 1], 0, account_list[current_account_list_index % account_list_size]);
+}
+
+void account_name_rotate_forward( int idx ) {
+    int account_list_size = sizeof(account_list)/sizeof(char *);
+
+    set_field_buffer(fields[idx * 2 + 1], 0, "");
+    set_field_buffer(fields[idx * 2 + 1], 0, account_list[++current_account_list_index % account_list_size]);
 }
 
 void driver_screens( int ch, char *type ) {
     switch (ch) {
         case KEY_F(4):
             if( strncmp("transaction", type, 11) == 0) {
-              account_name_rotate_backward(ACCOUNT_NAME_OWNER_IDX);
+              account_name_rotate_backward(TRANSACTION_ACCOUNT_NAME_OWNER);
             } else if( strncmp("payment", type, 7) == 0) {
-              account_name_rotate_backward(2);
+              account_name_rotate_backward(PAYMENT_ACCOUNT_NAME_OWNER);
             }
 
         break;
         case KEY_F(5):
             if( strncmp("transaction", type, 11) == 0) {
-              account_name_rotate_forward(ACCOUNT_NAME_OWNER_IDX);
+              account_name_rotate_forward(TRANSACTION_ACCOUNT_NAME_OWNER);
             } else if( strncmp("payment", type, 7) == 0) {
-              account_name_rotate_forward(2);
+              account_name_rotate_forward(PAYMENT_ACCOUNT_NAME_OWNER);
             }
         break;
         case KEY_F(2):
@@ -374,7 +403,7 @@ void cleanup_transaction_screen() {
       free_form(form);
       form = NULL;
     }
-    for( int idx = 0; idx < 16; idx++ ) {
+    for( int idx = 0; idx < MAX_TRANSACTION * 2; idx++ ) {
       free_field(fields[idx]);
       fields[idx] = NULL;
     }
@@ -391,7 +420,7 @@ void cleanup_payment_screen() {
       form = NULL;
     }
 
-    for( int idx = 0; idx < 6; idx++ ) {
+    for( int idx = 0; idx < MAX_PAYMENT * 2; idx++ ) {
       free_field(fields[idx]);
       fields[idx] = NULL;
     }
@@ -419,15 +448,15 @@ void show_payment_insert_screen() {
     curs_set(1);
     mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F4/F5 back/forward account");
 
-    fields[0] = new_field(1, label_length, TRANSACTION_DATE_IDX * 2, 0, 0, 0);
-    fields[1] = new_field(1, text_length, TRANSACTION_DATE_IDX * 2, label_length + 1, 0, 0);
-    fields[2] = new_field(1, label_length, AMOUNT_IDX * 2, 0, 0, 0);
-    fields[3] = new_field(1, text_length, AMOUNT_IDX * 2, label_length + 1, 0, 0);
-    fields[4] = new_field(1, label_length, ACCOUNT_NAME_OWNER_IDX * 2, 0, 0, 0);
-    fields[5] = new_field(1, text_length, ACCOUNT_NAME_OWNER_IDX * 2, label_length + 1, 0, 0);
-    fields[6] = NULL;
+    fields[PAYMENT_TRANSACTION_DATE * 2] = new_field(1, label_length, PAYMENT_TRANSACTION_DATE * 2, 0, 0, 0);
+    fields[PAYMENT_TRANSACTION_DATE * 2 + 1] = new_field(1, text_length, PAYMENT_TRANSACTION_DATE * 2, label_length + 1, 0, 0);
+    fields[PAYMENT_AMOUNT * 2] = new_field(1, label_length, PAYMENT_AMOUNT * 2, 0, 0, 0);
+    fields[PAYMENT_AMOUNT * 2 + 1] = new_field(1, text_length, PAYMENT_AMOUNT * 2, label_length + 1, 0, 0);
+    fields[PAYMENT_ACCOUNT_NAME_OWNER * 2] = new_field(1, label_length, PAYMENT_ACCOUNT_NAME_OWNER * 2, 0, 0, 0);
+    fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1] = new_field(1, text_length, PAYMENT_ACCOUNT_NAME_OWNER * 2, label_length + 1, 0, 0);
+    fields[MAX_PAYMENT * 2] = NULL;
 
-    for( int idx = 0; idx < 6; idx++ ) {
+    for( int idx = 0; idx < MAX_PAYMENT * 2; idx++ ) {
       assert(fields[idx] != NULL);
     }
 
@@ -475,31 +504,31 @@ void show_transaction_insert_screen() {
     curs_set(1);
     mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F4/F5 back/forward account");
 
-    fields[TRANSACTION_DATE_IDX * 2] = new_field(1, label_length, TRANSACTION_DATE_IDX * 2, 0, 0, 0);
-    fields[TRANSACTION_DATE_IDX * 2 + 1] = new_field(1, text_length, TRANSACTION_DATE_IDX * 2, label_length + 1, 0, 0);
-    fields[DESCRIPTION_IDX * 2] = new_field(1, label_length, DESCRIPTION_IDX * 2, 0, 0, 0);
-    fields[DESCRIPTION_IDX * 2 + 1] = new_field(1, text_length, DESCRIPTION_IDX * 2, label_length + 1, 0, 0);
-    fields[CATEGORY_IDX * 2] = new_field(1, label_length, CATEGORY_IDX * 2, 0, 0, 0);
-    fields[CATEGORY_IDX * 2 + 1] = new_field(1, text_length, CATEGORY_IDX * 2, label_length + 1, 0, 0);
-    fields[AMOUNT_IDX * 2] = new_field(1, label_length, AMOUNT_IDX * 2, 0, 0, 0);
-    fields[AMOUNT_IDX * 2 + 1] = new_field(1, text_length, AMOUNT_IDX * 2, label_length + 1, 0, 0);
-    fields[CLEARED_IDX * 2] = new_field(1, label_length, CLEARED_IDX * 2, 0, 0, 0);
-    fields[CLEARED_IDX * 2 + 1] = new_field(1, text_length, CLEARED_IDX * 2, label_length + 1, 0, 0);
-    fields[NOTES_IDX * 2] = new_field(1, label_length, NOTES_IDX * 2, 0, 0, 0);
-    fields[NOTES_IDX * 2 + 1] = new_field(1, text_length, NOTES_IDX * 2, label_length + 1, 0, 0);
-    fields[ACCOUNT_NAME_OWNER_IDX * 2] = new_field(1, label_length, ACCOUNT_NAME_OWNER_IDX * 2, 0, 0, 0);
-    fields[ACCOUNT_NAME_OWNER_IDX * 2 + 1] = new_field(1, text_length, ACCOUNT_NAME_OWNER_IDX * 2, label_length + 1, 0, 0);
-    fields[ACCOUNT_TYPE_IDX * 2] = new_field(1, label_length, ACCOUNT_TYPE_IDX * 2, 0, 0, 0);
-    fields[ACCOUNT_TYPE_IDX * 2 + 1] = new_field(1, text_length, ACCOUNT_TYPE_IDX * 2, label_length + 1, 0, 0);
-    fields[16] = NULL;
+    fields[TRANSACTION_TRANSACTION_DATE * 2] = new_field(1, label_length, TRANSACTION_TRANSACTION_DATE * 2, 0, 0, 0);
+    fields[TRANSACTION_TRANSACTION_DATE * 2 + 1] = new_field(1, text_length, TRANSACTION_TRANSACTION_DATE * 2, label_length + 1, 0, 0);
+    fields[TRANSACTION_DESCRIPTION * 2] = new_field(1, label_length, TRANSACTION_DESCRIPTION * 2, 0, 0, 0);
+    fields[TRANSACTION_DESCRIPTION * 2 + 1] = new_field(1, text_length, TRANSACTION_DESCRIPTION * 2, label_length + 1, 0, 0);
+    fields[TRANSACTION_CATEGORY * 2] = new_field(1, label_length, TRANSACTION_CATEGORY * 2, 0, 0, 0);
+    fields[TRANSACTION_CATEGORY * 2 + 1] = new_field(1, text_length, TRANSACTION_CATEGORY * 2, label_length + 1, 0, 0);
+    fields[TRANSACTION_AMOUNT * 2] = new_field(1, label_length, TRANSACTION_AMOUNT * 2, 0, 0, 0);
+    fields[TRANSACTION_AMOUNT * 2 + 1] = new_field(1, text_length, TRANSACTION_AMOUNT * 2, label_length + 1, 0, 0);
+    fields[TRANSACTION_CLEARED * 2] = new_field(1, label_length, TRANSACTION_CLEARED * 2, 0, 0, 0);
+    fields[TRANSACTION_CLEARED * 2 + 1] = new_field(1, text_length, TRANSACTION_CLEARED * 2, label_length + 1, 0, 0);
+    fields[TRANSACTION_NOTES * 2] = new_field(1, label_length, TRANSACTION_NOTES * 2, 0, 0, 0);
+    fields[TRANSACTION_NOTES * 2 + 1] = new_field(1, text_length, TRANSACTION_NOTES * 2, label_length + 1, 0, 0);
+    fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2] = new_field(1, label_length, TRANSACTION_ACCOUNT_NAME_OWNER * 2, 0, 0, 0);
+    fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2 + 1] = new_field(1, text_length, TRANSACTION_ACCOUNT_NAME_OWNER * 2, label_length + 1, 0, 0);
+    fields[TRANSACTION_ACCOUNT_TYPE * 2] = new_field(1, label_length, TRANSACTION_ACCOUNT_TYPE * 2, 0, 0, 0);
+    fields[TRANSACTION_ACCOUNT_TYPE * 2 + 1] = new_field(1, text_length, TRANSACTION_ACCOUNT_TYPE * 2, label_length + 1, 0, 0);
+    fields[MAX_TRANSACTION * 2] = NULL;
 
-    for( int idx = 0; idx < 16; idx++ ) {
+    for( int idx = 0; idx < MAX_TRANSACTION * 2; idx++ ) {
       assert(fields[idx] != NULL);
     }
 
     set_transaction_default_values();
 
-    for( int idx = 0; idx < 8; idx++ ) {
+    for( int idx = 0; idx < MAX_TRANSACTION; idx++ ) {
       set_field_opts(fields[idx * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
       set_field_opts(fields[idx * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
       set_field_back(fields[idx * 2 + 1], A_UNDERLINE);
@@ -528,7 +557,7 @@ void show_main_screen() {
     char item[12] = {0};
     int ch = 0;
     int idx = 0;
-    int menu_list_size = sizeof(menu_list)/sizeof(menu_list[0]);
+    int menu_list_size = sizeof(menu_list)/sizeof(char *);
 
     initscr(); // initialize Ncurses
     //win_main_menu = newwin(10, 15, 1, 1); // create a new window
