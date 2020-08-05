@@ -93,7 +93,7 @@ void account_name_rotate_backward( int );
 void account_name_rotate_forward( int );
 void cleanup_payment_screen();
 void cleanup_transaction_screen();
-void driver_screens( int, char * );
+void driver_screens( int, MenuType );
 void init_string( String * );
 void set_payment_default_values();
 void show_payment_insert_screen();
@@ -323,20 +323,20 @@ void account_name_rotate_forward( int idx ) {
     set_field_buffer(fields[idx * 2 + 1], 0, account_list[++current_account_list_index % account_list_size]);
 }
 
-void driver_screens( int ch, char *type ) {
+void driver_screens( int ch, MenuType menu_type ) {
     switch (ch) {
         case KEY_F(4):
-            if( strncmp("transaction", type, 11) == 0) {
+            if( menu_type == MENU_TYPE_TRANSACTION ) {
               account_name_rotate_backward(TRANSACTION_ACCOUNT_NAME_OWNER);
-            } else if( strncmp("payment", type, 7) == 0) {
+            } else if( menu_type == MENU_TYPE_PAYMENT ) {
               account_name_rotate_backward(PAYMENT_ACCOUNT_NAME_OWNER);
             }
 
         break;
         case KEY_F(5):
-            if( strncmp("transaction", type, 11) == 0) {
+            if( menu_type == MENU_TYPE_TRANSACTION ) {
               account_name_rotate_forward(TRANSACTION_ACCOUNT_NAME_OWNER);
-            } else if( strncmp("payment", type, 7) == 0) {
+            } else if( menu_type == MENU_TYPE_PAYMENT ) {
               account_name_rotate_forward(PAYMENT_ACCOUNT_NAME_OWNER);
             }
         break;
@@ -346,11 +346,11 @@ void driver_screens( int ch, char *type ) {
             form_driver(form, REQ_PREV_FIELD);
             move(LINES-3, 2);
 
-            if( strncmp("transaction", type, 11) == 0) {
+            if( menu_type == MENU_TYPE_TRANSACTION ) {
                 if( transaction_json_generated() == SUCCESS ) {
                   set_transaction_default_values();
                 }
-            } else if( strncmp("payment", type, 7) == 0) {
+            } else if( menu_type == MENU_TYPE_PAYMENT ) {
                 if( payment_json_generated() == SUCCESS ) {
                   set_payment_default_values();
                 }
@@ -479,7 +479,7 @@ void show_payment_insert_screen() {
     wrefresh(win_form);
 
     while ((ch = getch()) != 27) { //escape = 27
-        driver_screens(ch, "payment");
+        driver_screens(ch, MENU_TYPE_PAYMENT);
     }
 
   cleanup_payment_screen();
@@ -546,7 +546,7 @@ void show_transaction_insert_screen() {
 
     //while ((ch = wgetch(win_body)) != 27) { //escape = 27
     while ((ch = getch()) != 27) { //escape = 27
-        driver_screens(ch, "transaction");
+        driver_screens(ch, MENU_TYPE_TRANSACTION);
     }
 
   cleanup_transaction_screen();
