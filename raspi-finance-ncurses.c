@@ -79,11 +79,11 @@ static const char *account_list[] = {
     "amex_brian", "amex_kari", "barclays_brian", "barclays_kari", "chase_brian", "chase_kari" , "citicash_brian", "usbank-cash_brian", "usbank-cash_kari",
 };
 
+//TODO: erraticate these global vars
 static FORM *form = NULL;
 static FIELD *fields[MAX_TRANSACTION * 2 + 1];
 static WINDOW *win_body = NULL;
-static WINDOW *win_form = NULL;
-static WINDOW *win_main_menu = NULL;
+static WINDOW *main_window = NULL;
 
 int current_account_list_index = 0;
 
@@ -92,8 +92,7 @@ void show_transaction_insert_screen();
 void set_transaction_default_values();
 void account_name_rotate_backward( int );
 void account_name_rotate_forward( int );
-void cleanup_payment_screen();
-void cleanup_transaction_screen();
+void cleanup_payment_screen( MenuType );
 void driver_screens( int, MenuType );
 void init_string( String * );
 void set_payment_default_values();
@@ -280,8 +279,7 @@ int transaction_json_generated() {
 
 int payment_json_generated() {
     char payload[MAX_PAYLOAD] = {0};
-    strncat(payload, "{", MAX_PAYLOAD - strlen(payload) - 1);
-    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "{\"", MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, TRANSACTION_DATE, MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, "\":", MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
@@ -290,18 +288,16 @@ int payment_json_generated() {
     strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, AMOUNT, MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, "\":", MAX_PAYLOAD - strlen(payload) - 1);
-    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, extract_field(fields[PAYMENT_AMOUNT * 2 + 1]), MAX_PAYLOAD - strlen(payload) - 1);
-    strncat(payload, "\",", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, ",", MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, ACCOUNT_NAME_OWNER, MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, "\":", MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, extract_field(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1]), MAX_PAYLOAD - strlen(payload) - 1);
-    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
-    strncat(payload, "}", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"}", MAX_PAYLOAD - strlen(payload) - 1);
     int result = curl_post_call(payload, MENU_TYPE_PAYMENT);
-//    printw("%s", payload);
+    printw("%s", payload);
     return result;
 }
 
@@ -392,38 +388,31 @@ void driver_screens( int ch, MenuType menu_type ) {
             break;
     }
 
-    wrefresh(win_form);
-}
-// TODO: combine the cleanup functions
-void cleanup_transaction_screen() {
-    if( form != NULL ) {
-      unpost_form(form);
-      free_form(form);
-      form = NULL;
-    }
-    for( int idx = 0; idx < MAX_TRANSACTION * 2; idx++ ) {
-      free_field(fields[idx]);
-      fields[idx] = NULL;
-    }
-
-    delwin(win_form);
-    delwin(win_body);
-    endwin();
+    wrefresh(main_window);
 }
 
-void cleanup_payment_screen() {
+void cleanup_screen( MenuType menu_type ) {
     if( form != NULL ) {
       unpost_form(form);
       free_form(form);
       form = NULL;
     }
 
-    for( int idx = 0; idx < MAX_PAYMENT * 2; idx++ ) {
-      free_field(fields[idx]);
-      fields[idx] = NULL;
+    if( menu_type == MENU_TYPE_TRANSACTION ) {
+      for( int idx = 0; idx < MAX_TRANSACTION * 2; idx++ ) {
+        free_field(fields[idx]);
+        fields[idx] = NULL;
+      }
+    } else if( menu_type == MENU_TYPE_PAYMENT ) {
+      for( int idx = 0; idx < MAX_PAYMENT * 2; idx++ ) {
+        free_field(fields[idx]);
+        fields[idx] = NULL;
+      }
+    } else {
+
     }
 
-    delwin(win_form);
+    delwin(main_window);
     delwin(win_body);
     endwin();
 }
@@ -440,9 +429,9 @@ void show_payment_insert_screen() {
     win_body = newwin(24, 80, 0, 0);
     assert(win_body != NULL);
     box(win_body, 0, 0);
-    win_form = derwin(win_body, 20, 78, 3, 1);
-    assert(win_form != NULL);
-    box(win_form, 0, 0);
+    main_window = derwin(win_body, 20, 78, 3, 1);
+    assert(main_window != NULL);
+    box(main_window, 0, 0);
     curs_set(1);
     mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F4/F5 back/forward account");
 
@@ -467,19 +456,19 @@ void show_payment_insert_screen() {
 
     form = new_form(fields);
     assert(form != NULL);
-    set_form_win(form, win_form);
-    set_form_sub(form, derwin(win_form, 18, 76, 1, 1));
+    set_form_win(form, main_window);
+    set_form_sub(form, derwin(main_window, 18, 76, 1, 1));
     post_form(form);
 
     refresh();
     wrefresh(win_body);
-    wrefresh(win_form);
+    wrefresh(main_window);
 
     while ((ch = getch()) != 27) { //escape = 27
         driver_screens(ch, MENU_TYPE_PAYMENT);
     }
 
-  cleanup_payment_screen();
+  cleanup_screen(MENU_TYPE_PAYMENT);
   show_main_screen();
 }
 
@@ -495,9 +484,9 @@ void show_transaction_insert_screen() {
     win_body = newwin(24, 80, 0, 0);
     assert(win_body != NULL);
     box(win_body, 0, 0);
-    win_form = derwin(win_body, 20, 78, 3, 1);
-    assert(win_form != NULL);
-    box(win_form, 0, 0);
+    main_window = derwin(win_body, 20, 78, 3, 1);
+    assert(main_window != NULL);
+    box(main_window, 0, 0);
     curs_set(1);
     mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F4/F5 back/forward account");
 
@@ -522,19 +511,19 @@ void show_transaction_insert_screen() {
 
     form = new_form(fields);
     assert(form != NULL);
-    set_form_win(form, win_form);
-    set_form_sub(form, derwin(win_form, 18, 76, 1, 1));
+    set_form_win(form, main_window);
+    set_form_sub(form, derwin(main_window, 18, 76, 1, 1));
     post_form(form);
 
     refresh();
     wrefresh(win_body);
-    wrefresh(win_form);
+    wrefresh(main_window);
 
     while ((ch = getch()) != 27) { //escape = 27
         driver_screens(ch, MENU_TYPE_TRANSACTION);
     }
 
-  cleanup_transaction_screen();
+  cleanup_screen(MENU_TYPE_TRANSACTION);
   show_main_screen();
 }
 
@@ -545,32 +534,32 @@ void show_main_screen() {
     int menu_list_size = sizeof(menu_list)/sizeof(char *);
 
     initscr(); // initialize Ncurses
-    //win_main_menu = newwin(10, 15, 1, 1); // create a new window
-    win_main_menu = newwin(24, 80, 0, 0);; // create a new window
-    assert(win_main_menu != NULL);
-    box(win_main_menu, 0, 0); // sets default borders for the window
+    //main_window = newwin(10, 15, 1, 1); // create a new window
+    main_window = newwin(24, 80, 0, 0);; // create a new window
+    assert(main_window != NULL);
+    box(main_window, 0, 0); // sets default borders for the window
 
     for( idx = 0; idx < menu_list_size; idx++ ) {
         if( idx == 0 ) {
-            wattron(win_main_menu, A_STANDOUT); // highlights the first item.
+            wattron(main_window, A_STANDOUT); // highlights the first item.
         } else {
-            wattroff(win_main_menu, A_STANDOUT);
+            wattroff(main_window, A_STANDOUT);
         }
         snprintf(item, sizeof(item), "%s", menu_list[idx]);
-        mvwprintw(win_main_menu, idx + 1, 2, "%s", item);
+        mvwprintw(main_window, idx + 1, 2, "%s", item);
     }
 
-    wrefresh(win_main_menu); // update the terminal screen
+    wrefresh(main_window); // update the terminal screen
 
     idx = 0;
     noecho(); // disable echoing of characters on the screen
-    keypad(win_main_menu, TRUE); // enable keyboard input for the window.
+    keypad(main_window, TRUE); // enable keyboard input for the window.
     curs_set(0); // hide the default screen cursor.
 
-    ch = wgetch(win_main_menu);
+    ch = wgetch(main_window);
     while( ch != 27 ) {
         snprintf(item, sizeof(item), "%s",  menu_list[idx]);
-        mvwprintw(win_main_menu, idx + 1, 2, "%s", item );
+        mvwprintw(main_window, idx + 1, 2, "%s", item );
         switch( ch ) {
             case KEY_UP:
             case 'k':
@@ -579,22 +568,22 @@ void show_main_screen() {
                 break;
             case '\n':
                 if( idx == 0 ) {
-                    wclear(win_main_menu);
-                    delwin(win_main_menu);
+                    wclear(main_window);
+                    delwin(main_window);
                     endwin();
                     show_transaction_insert_screen();
                 }
 
                 if( idx == 1 ) {
-                    wclear(win_main_menu);
-                    delwin(win_main_menu);
+                    wclear(main_window);
+                    delwin(main_window);
                     endwin();
                     show_payment_insert_screen();
                 }
 
                 if( idx == 2 ) {
-                  wclear(win_main_menu);
-                  delwin(win_main_menu);
+                  wclear(main_window);
+                  delwin(main_window);
                   endwin();
                   exit(0);
                 }
@@ -606,17 +595,17 @@ void show_main_screen() {
                 break;
         }
         // now highlight the next item in the list.
-        wattron(win_main_menu, A_STANDOUT);
+        wattron(main_window, A_STANDOUT);
 
         //sprintf(item, "%-7s",  list[i]);
         snprintf(item, sizeof(item), "%s",  menu_list[idx]);
-        mvwprintw(win_main_menu, idx + 1, 2, "%s", item);
-        wattroff(win_main_menu, A_STANDOUT);
+        mvwprintw(main_window, idx + 1, 2, "%s", item);
+        wattroff(main_window, A_STANDOUT);
 
-        ch = wgetch(win_main_menu);
+        ch = wgetch(main_window);
     }
 
-    delwin(win_main_menu);
+    delwin(main_window);
     endwin();
     exit(EXIT_SUCCESS);
 }
