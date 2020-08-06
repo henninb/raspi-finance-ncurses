@@ -266,7 +266,8 @@ int transaction_json_generated() {
     snprintf(payload + strlen(payload), sizeof(payload), "}");
 
     //TODO: add json logic
-    cJSON *json = cJSON_ParseWithLength(payload, sizeof(payload));
+    //cJSON *json = cJSON_ParseWithLength(payload, sizeof(payload));
+    //cJSON *json = cJSON_ParseWithOpts(payload, sizeof(payload));
 
     int result = curl_post_call(payload, MENU_TYPE_TRANSACTION);
     //wclear(win_body);
@@ -275,27 +276,28 @@ int transaction_json_generated() {
 }
 
 int payment_json_generated() {
-    char payload[500] = {0};
-    strncat(payload, "{", 1);
-    strncat(payload, "\"", 1);
-    strncat(payload, TRANSACTION_DATE, sizeof(TRANSACTION_DATE));
-    strncat(payload, "\":", 2);
-    strncat(payload, "\"", 1);
-    strncat(payload, extract_field(fields[PAYMENT_TRANSACTION_DATE * 2 + 1]), strlen(extract_field(fields[PAYMENT_TRANSACTION_DATE * 2 + 1])));
-    strncat(payload, "\",", 2);
-    strncat(payload, "\"", 1);
-    strncat(payload, AMOUNT, sizeof(AMOUNT));
-    strncat(payload, "\":", 2);
-    strncat(payload, "\"", 1);
-    strncat(payload, extract_field(fields[PAYMENT_AMOUNT * 2 + 1]), strlen(extract_field(fields[PAYMENT_AMOUNT * 2 + 1])));
-    strncat(payload, "\",", 2);
-    strncat(payload, "\"", 1);
-    strncat(payload, ACCOUNT_NAME_OWNER, sizeof(ACCOUNT_NAME_OWNER));
-    strncat(payload, "\":", 2);
-    strncat(payload, "\"", 1);
-    strncat(payload, extract_field(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1]), strlen(extract_field(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1])));
-    strncat(payload, "\"", 1);
-    strncat(payload, "}", 1);
+    #define MAX_PAYLOAD 500
+    char payload[MAX_PAYLOAD] = {0};
+    strncat(payload, "{", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, TRANSACTION_DATE, MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\":", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, extract_field(fields[PAYMENT_TRANSACTION_DATE * 2 + 1]), MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\",", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, AMOUNT, MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\":", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, extract_field(fields[PAYMENT_AMOUNT * 2 + 1]), MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\",", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, ACCOUNT_NAME_OWNER, MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\":", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, extract_field(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1]), MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "}", MAX_PAYLOAD - strlen(payload) - 1);
 //    snprintf(payload + strlen(payload), sizeof(payload), "{");
 //    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", TRANSACTION_DATE, extract_field(fields[PAYMENT_TRANSACTION_DATE * 2 + 1]));
 //    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extract_field(fields[PAYMENT_AMOUNT * 2 + 1]));
