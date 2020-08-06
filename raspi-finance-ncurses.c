@@ -28,7 +28,8 @@
 #define SUCCESS 0
 #define FAILURE 1
 
-//https://riptutorial.com/c/example/6564/typedef-enum
+#define MAX_PAYLOAD 500
+
 typedef enum {
     TRANSACTION_ACCOUNT_NAME_OWNER = 0,
     TRANSACTION_ACCOUNT_TYPE,
@@ -70,10 +71,10 @@ typedef struct {
     size_t len;
 } String;
 
-//type make that enum
+//TODO: menu_list make that enum?
 static const char *menu_list[] = {"transaction", "payment", "quit"};
 
-//needs some tlc
+//TODO: account_list make that enum?
 static const char *account_list[] = {
     "amex_brian", "amex_kari", "barclays_brian", "barclays_kari", "chase_brian", "chase_kari" , "citicash_brian", "usbank-cash_brian", "usbank-cash_kari",
 };
@@ -127,7 +128,7 @@ char * trim_whitespaces( char *str ) {
 
 void init_string( String *s ) {
   s->len = 0;
-  //use calloc
+  //TODO: use calloc
   s->ptr = malloc(1);
   if (s->ptr == NULL) {
     fprintf(stderr, "malloc() failed\n");
@@ -144,6 +145,7 @@ size_t write_response_to_string( void *ptr, size_t size, size_t nmemb, String *s
     exit(EXIT_FAILURE);
   }
 
+  //TODO: should I use snprintf
   memcpy(s->ptr+s->len, ptr, size*nmemb);
   s->ptr[new_len] = '\0';
   s->len = new_len;
@@ -181,6 +183,7 @@ int curl_post_call( char *payload, MenuType menu_type ) {
     }
     result = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
+    //TODO: add a payment check like the one below
     if( strcmp(response.ptr, "transaction inserted") == 0) {
       printw("200 - SUCCESS\n");
       free(response.ptr);
@@ -241,7 +244,7 @@ void set_payment_default_values() {
 }
 
 int transaction_json_generated() {
-    char payload[500] = {0};
+    char payload[MAX_PAYLOAD] = {0};
     uuid_t binuuid;
     char uuid[37] = {0};
 
@@ -276,7 +279,6 @@ int transaction_json_generated() {
 }
 
 int payment_json_generated() {
-    #define MAX_PAYLOAD 500
     char payload[MAX_PAYLOAD] = {0};
     strncat(payload, "{", MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
@@ -298,15 +300,9 @@ int payment_json_generated() {
     strncat(payload, extract_field(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1]), MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
     strncat(payload, "}", MAX_PAYLOAD - strlen(payload) - 1);
-//    snprintf(payload + strlen(payload), sizeof(payload), "{");
-//    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", TRANSACTION_DATE, extract_field(fields[PAYMENT_TRANSACTION_DATE * 2 + 1]));
-//    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":%s,", AMOUNT, extract_field(fields[PAYMENT_AMOUNT * 2 + 1]));
-//    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", ACCOUNT_NAME_OWNER, extract_field(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1]));
-//    snprintf(payload + strlen(payload), sizeof(payload), "}");
-    //int result = curl_post_call(payload, payment_type);
-    printw("%s", payload);
-    //return result;
-    return 0;
+    int result = curl_post_call(payload, MENU_TYPE_PAYMENT);
+//    printw("%s", payload);
+    return result;
 }
 
 void account_name_rotate_backward( int idx ) {
@@ -398,7 +394,7 @@ void driver_screens( int ch, MenuType menu_type ) {
 
     wrefresh(win_form);
 }
-
+// TODO: combine the cleanup functions
 void cleanup_transaction_screen() {
     if( form != NULL ) {
       unpost_form(form);
@@ -455,12 +451,6 @@ void show_payment_insert_screen() {
         fields[idx * 2 + 1] = new_field(1, text_length, idx * 2, label_length + 1, 0, 0);
     }
 
-//    fields[PAYMENT_TRANSACTION_DATE * 2] = new_field(1, label_length, PAYMENT_TRANSACTION_DATE * 2, 0, 0, 0);
-//    fields[PAYMENT_TRANSACTION_DATE * 2 + 1] = new_field(1, text_length, PAYMENT_TRANSACTION_DATE * 2, label_length + 1, 0, 0);
-//    fields[PAYMENT_AMOUNT * 2] = new_field(1, label_length, PAYMENT_AMOUNT * 2, 0, 0, 0);
-//    fields[PAYMENT_AMOUNT * 2 + 1] = new_field(1, text_length, PAYMENT_AMOUNT * 2, label_length + 1, 0, 0);
-//    fields[PAYMENT_ACCOUNT_NAME_OWNER * 2] = new_field(1, label_length, PAYMENT_ACCOUNT_NAME_OWNER * 2, 0, 0, 0);
-//    fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1] = new_field(1, text_length, PAYMENT_ACCOUNT_NAME_OWNER * 2, label_length + 1, 0, 0);
     fields[MAX_PAYMENT * 2] = NULL;
 
     for( int idx = 0; idx < MAX_PAYMENT * 2; idx++ ) {
@@ -516,22 +506,6 @@ void show_transaction_insert_screen() {
         fields[idx * 2 + 1] = new_field(1, text_length, idx * 2, label_length + 1, 0, 0);
     }
 
-//    fields[TRANSACTION_TRANSACTION_DATE * 2] = new_field(1, label_length, TRANSACTION_TRANSACTION_DATE * 2, 0, 0, 0);
-//    fields[TRANSACTION_TRANSACTION_DATE * 2 + 1] = new_field(1, text_length, TRANSACTION_TRANSACTION_DATE * 2, label_length + 1, 0, 0);
-//    fields[TRANSACTION_DESCRIPTION * 2] = new_field(1, label_length, TRANSACTION_DESCRIPTION * 2, 0, 0, 0);
-//    fields[TRANSACTION_DESCRIPTION * 2 + 1] = new_field(1, text_length, TRANSACTION_DESCRIPTION * 2, label_length + 1, 0, 0);
-//    fields[TRANSACTION_CATEGORY * 2] = new_field(1, label_length, TRANSACTION_CATEGORY * 2, 0, 0, 0);
-//    fields[TRANSACTION_CATEGORY * 2 + 1] = new_field(1, text_length, TRANSACTION_CATEGORY * 2, label_length + 1, 0, 0);
-//    fields[TRANSACTION_AMOUNT * 2] = new_field(1, label_length, TRANSACTION_AMOUNT * 2, 0, 0, 0);
-//    fields[TRANSACTION_AMOUNT * 2 + 1] = new_field(1, text_length, TRANSACTION_AMOUNT * 2, label_length + 1, 0, 0);
-//    fields[TRANSACTION_CLEARED * 2] = new_field(1, label_length, TRANSACTION_CLEARED * 2, 0, 0, 0);
-//    fields[TRANSACTION_CLEARED * 2 + 1] = new_field(1, text_length, TRANSACTION_CLEARED * 2, label_length + 1, 0, 0);
-//    fields[TRANSACTION_NOTES * 2] = new_field(1, label_length, TRANSACTION_NOTES * 2, 0, 0, 0);
-//    fields[TRANSACTION_NOTES * 2 + 1] = new_field(1, text_length, TRANSACTION_NOTES * 2, label_length + 1, 0, 0);
-//    fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2] = new_field(1, label_length, TRANSACTION_ACCOUNT_NAME_OWNER * 2, 0, 0, 0);
-//    fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2 + 1] = new_field(1, text_length, TRANSACTION_ACCOUNT_NAME_OWNER * 2, label_length + 1, 0, 0);
-//    fields[TRANSACTION_ACCOUNT_TYPE * 2] = new_field(1, label_length, TRANSACTION_ACCOUNT_TYPE * 2, 0, 0, 0);
-//    fields[TRANSACTION_ACCOUNT_TYPE * 2 + 1] = new_field(1, text_length, TRANSACTION_ACCOUNT_TYPE * 2, label_length + 1, 0, 0);
     fields[MAX_TRANSACTION * 2] = NULL;
 
     for( int idx = 0; idx < MAX_TRANSACTION * 2; idx++ ) {
@@ -556,7 +530,6 @@ void show_transaction_insert_screen() {
     wrefresh(win_body);
     wrefresh(win_form);
 
-    //while ((ch = wgetch(win_body)) != 27) { //escape = 27
     while ((ch = getch()) != 27) { //escape = 27
         driver_screens(ch, MENU_TYPE_TRANSACTION);
     }
@@ -577,7 +550,6 @@ void show_main_screen() {
     assert(win_main_menu != NULL);
     box(win_main_menu, 0, 0); // sets default borders for the window
 
-// now print all the menu items and highlight the first one
     for( idx = 0; idx < menu_list_size; idx++ ) {
         if( idx == 0 ) {
             wattron(win_main_menu, A_STANDOUT); // highlights the first item.
