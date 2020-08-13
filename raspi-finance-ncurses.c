@@ -76,7 +76,7 @@ static const char *menu_list[] = {"transaction", "payment", "quit"};
 
 //TODO: account_list make that enum?
 static const char *account_list[] = {
-    "amex_brian", "amex_kari", "barclays_brian", "barclays_kari", "chase_brian", "chase_kari" , "citicash_brian", "usbank-cash_brian", "usbank-cash_kari",
+    "amex_brian", "amex_kari", "barclays_brian", "barclays_kari", "chase_brian", "chase_kari" , "citicash_brian", "rcard_brian", "usbank-cash_brian", "usbank-cash_kari",
 };
 
 //TODO: erraticate these global vars
