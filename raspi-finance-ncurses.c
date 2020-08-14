@@ -18,6 +18,7 @@
 #define CLEARED "cleared"
 #define NOTES "notes"
 #define GUID "guid"
+#define REOCCURRING "reoccurring"
 #define ACCOUNT_TYPE "accountType"
 #define DATE_UPDATED "dateUpdated"
 #define DATE_ADDED "dateAdded"
@@ -217,11 +218,11 @@ void set_transaction_default_values() {
     set_field_buffer(fields[TRANSACTION_CATEGORY * 2], 0, CATEGORY);
     set_field_buffer(fields[TRANSACTION_CATEGORY * 2 + 1], 0, "");
     set_field_buffer(fields[TRANSACTION_AMOUNT * 2], 0, AMOUNT);
-    set_field_buffer(fields[TRANSACTION_AMOUNT * 2 + 1], 0, "0.00");
+    set_field_buffer(fields[TRANSACTION_AMOUNT * 2 + 1], 0, "");
     set_field_buffer(fields[TRANSACTION_CLEARED * 2], 0, CLEARED);
     set_field_buffer(fields[TRANSACTION_CLEARED * 2 + 1], 0, "0");
     set_field_buffer(fields[TRANSACTION_NOTES * 2], 0, NOTES);
-    set_field_buffer(fields[TRANSACTION_NOTES * 2 + 1], 0, "");
+    set_field_buffer(fields[TRANSACTION_NOTES * 2 + 1], 0, "processed by ncurses");
     set_field_buffer(fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2], 0, ACCOUNT_NAME_OWNER);
     set_field_buffer(fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2 + 1], 0, "");
     set_field_buffer(fields[TRANSACTION_ACCOUNT_TYPE * 2], 0, ACCOUNT_TYPE);
@@ -264,6 +265,7 @@ int transaction_json_generated() {
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", NOTES, extract_field(fields[TRANSACTION_NOTES * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, extract_field(fields[TRANSACTION_ACCOUNT_TYPE * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2 + 1]));
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":false,", REOCCURRING);
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
     snprintf(payload + strlen(payload), sizeof(payload), "}");
 
