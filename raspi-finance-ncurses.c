@@ -77,7 +77,7 @@ static const char *menu_list[] = {"transaction", "payment", "quit"};
 
 //TODO: account_list make that enum?
 static const char *account_list[] = {
-    "amex_brian", "amex_kari", "barclays_brian", "barclays_kari", "chase_brian", "chase_kari" , "citicash_brian", "rcard_brian", "usbank-cash_brian", "usbank-cash_kari",
+    "amex_brian", "amex_kari", "barclays_brian", "barclays_kari", "chase_brian", "chase_kari", "chase-unlimited_kari", "citicash_brian", "citicash_kari", "rcard_brian", "usbank-cash_brian", "usbank-cash_kari",
 };
 
 //TODO: erraticate these global vars
@@ -189,6 +189,11 @@ int curl_post_call( char *payload, MenuType menu_type ) {
       free(response.ptr);
       response.ptr = NULL;
       return SUCCESS;
+    } else if( strcmp(response.ptr, "payment inserted") == 0) {
+      printw("200 - SUCCESS\n");
+      free(response.ptr);
+      response.ptr = NULL;
+      return SUCCESS;
     } else {
       if( response.len > 0) {
         printw("curl - %s\n", response.ptr);
@@ -238,7 +243,7 @@ void set_payment_default_values() {
     set_field_buffer(fields[PAYMENT_TRANSACTION_DATE * 2], 0, TRANSACTION_DATE);
     set_field_buffer(fields[PAYMENT_TRANSACTION_DATE * 2 + 1], 0, today_string);
     set_field_buffer(fields[PAYMENT_AMOUNT * 2], 0, AMOUNT);
-    set_field_buffer(fields[PAYMENT_AMOUNT * 2 + 1], 0, "0.00");
+    set_field_buffer(fields[PAYMENT_AMOUNT * 2 + 1], 0, "");
     set_field_buffer(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2], 0, ACCOUNT_NAME_OWNER);
     set_field_buffer(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1], 0, "");
 }
