@@ -77,10 +77,12 @@ typedef struct {
 //TODO: menu_list make that enum?
 static const char *menu_list[] = {"transaction", "payment", "quit"};
 
+char **account_list = NULL;
+long account_list_size = 0L;
 //TODO: account_list make that enum?
-static const char *account_list[] = {
-    "amex_brian", "amex_kari", "barclays_brian", "barclays_kari", "chase_brian", "chase_kari", "chase-unlimited_kari", "citicash_brian", "citicash_kari", "rcard_brian", "usbank-cash_brian", "usbank-cash_kari",
-};
+//static const char *account_list[] = {
+//    "amex_brian", "amex_kari", "barclays_brian", "barclays_kari", "chase_brian", "chase_kari", "chase-unlimited_kari", "citicash_brian", "citicash_kari", "rcard_brian", "usbank-cash_brian", "usbank-cash_kari",
+//};
 
 //TODO: erraticate these global vars
 static FORM *form = NULL;
@@ -105,6 +107,7 @@ char * trim_whitespaces( char * );
 int curl_post_call( char *, MenuType );
 int payment_json_generated();
 int transaction_json_generated();
+void create_string_array( long );
 
 long parse_long(const char *str) {
     errno = 0;
@@ -140,10 +143,12 @@ int jq_fetch_accounts_count() {
 void jq_fetch_accounts() {
   FILE *fp = NULL;
   char path[100] = {0};
-  long number_of_accounts = 0;
+  //long number_of_accounts = 0;
+  long index = 0;
 
-  number_of_accounts = jq_fetch_accounts_count();
-  printf("%ld\n", number_of_accounts);
+  account_list_size = jq_fetch_accounts_count();
+  create_string_array(account_list_size);
+  //printf("%ld\n", number_of_accounts);
   fp = popen("curl -s -X GET 'http://localhost:8080/account/select/active' | jq '.[] | .accountNameOwner' | tr -d '\"'", "r");
   if (fp == NULL) {
     printf("Failed to run command\n");
@@ -152,18 +157,19 @@ void jq_fetch_accounts() {
 
   while (fgets(path, sizeof(path), fp) != NULL) {
     printf("%s", path);
+    snprintf(account_list[index], 100, "%s", path);
+    printf("r=%s", account_list[index]);
+    index++;
   }
-
   pclose(fp);
 }
 
-void test_me( long list_size ) {
-  char **account_list = NULL;
+void create_string_array( long list_size ) {
   long max_string_length = 100;
 
-  account_list = malloc(list_size * sizeof(char*));
-  for (int idx = 0; idx < list_size; idx++) {
-    account_list[idx] = malloc((max_string_length + 1) * sizeof(char));
+  account_list = calloc(list_size, sizeof(char*));
+  for ( int idx = 0; idx < list_size; idx++ ) {
+    account_list[idx] = calloc((max_string_length + 1), sizeof(char));
   }
 }
 
@@ -372,7 +378,7 @@ int payment_json_generated() {
 }
 
 void account_name_rotate_backward( int idx ) {
-   int account_list_size = sizeof(account_list)/sizeof(char *);
+   //int account_list_size = sizeof(account_list)/sizeof(char *);
 
    set_field_buffer(fields[idx * 2 + 1], 0, "");
    /* idx--; */
@@ -383,7 +389,7 @@ void account_name_rotate_backward( int idx ) {
 }
 
 void account_name_rotate_forward( int idx ) {
-    int account_list_size = sizeof(account_list)/sizeof(char *);
+    //int account_list_size = sizeof(account_list)/sizeof(char *);
 
     /* idx++; */
     /* idx = ( idx > (menu_list_size-1) ) ? 0 : idx; */
