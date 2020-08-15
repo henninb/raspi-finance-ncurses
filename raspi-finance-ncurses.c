@@ -79,12 +79,8 @@ static const char *menu_list[] = {"transaction", "payment", "quit"};
 
 char **account_list = NULL;
 long account_list_size = 0L;
-//TODO: account_list make that enum?
-//static const char *account_list[] = {
-//    "amex_brian", "amex_kari", "barclays_brian", "barclays_kari", "chase_brian", "chase_kari", "chase-unlimited_kari", "citicash_brian", "citicash_kari", "rcard_brian", "usbank-cash_brian", "usbank-cash_kari",
-//};
 
-//TODO: erraticate these global vars
+//TODO: eradicate these global vars
 static FORM *form = NULL;
 static FIELD *fields[MAX_TRANSACTION * 2 + 1];
 static WINDOW *win_body = NULL;
