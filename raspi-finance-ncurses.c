@@ -6,9 +6,11 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <time.h>
+#include <unistd.h>
 #include <curl/curl.h>
 #include <uuid/uuid.h>
 #include <cjson/cJSON.h>
+#include <errno.h>
 
 #define TRANSACTION_DATE "transactionDate"
 #define ACCOUNT_NAME_OWNER "accountNameOwner"
@@ -104,6 +106,67 @@ int curl_post_call( char *, MenuType );
 int payment_json_generated();
 int transaction_json_generated();
 
+long parse_long(const char *str) {
+    errno = 0;
+    char *temp;
+    long val = strtol(str, &temp, 0);
+
+    if (temp == str || *temp != '\0' || ((val == LONG_MIN || val == LONG_MAX) && errno == ERANGE)) {
+        fprintf(stderr, "Could not convert '%s' to long and leftover string is: '%s'\n", str, temp);
+    }
+    return val;
+}
+
+int jq_fetch_accounts_count() {
+  FILE *fp = NULL;
+  char count[10] = {0};
+  long value = 0;
+
+  fp = popen("curl -s -X GET 'http://localhost:8080/account/select/active' | jq '.[] | .accountNameOwner' | wc -l", "r");
+  if (fp == NULL) {
+    printf("Failed to run command\n");
+    exit(1);
+  }
+
+  fgets(count, sizeof(count), fp);
+  pclose(fp);
+  //TODO: trim_whitespaces();
+  value = parse_long(count);
+  //printf("%ld\n", value);
+  //sleep(5);
+  return value;
+}
+
+void jq_fetch_accounts() {
+  FILE *fp = NULL;
+  char path[100] = {0};
+  long number_of_accounts = 0;
+
+  number_of_accounts = jq_fetch_accounts_count();
+  printf("%ld\n", number_of_accounts);
+  fp = popen("curl -s -X GET 'http://localhost:8080/account/select/active' | jq '.[] | .accountNameOwner' | tr -d '\"'", "r");
+  if (fp == NULL) {
+    printf("Failed to run command\n");
+    exit(1);
+  }
+
+  while (fgets(path, sizeof(path), fp) != NULL) {
+    printf("%s", path);
+  }
+
+  pclose(fp);
+}
+
+void test_me( long list_size ) {
+  char **account_list = NULL;
+  long max_string_length = 100;
+
+  account_list = malloc(list_size * sizeof(char*));
+  for (int idx = 0; idx < list_size; idx++) {
+    account_list[idx] = malloc((max_string_length + 1) * sizeof(char));
+  }
+}
+
 char * trim_whitespaces( char *str ) {
     char *end = NULL;
     char *trimmed = str;
@@ -155,7 +218,7 @@ size_t write_response_to_string( void *ptr, size_t size, size_t nmemb, String *s
 
 int curl_post_call( char *payload, MenuType menu_type ) {
     CURL *curl = curl_easy_init();
-    CURLcode result;
+    //CURLcode result;
     struct curl_slist *headers = NULL;
     String response = {0};
     init_string(&response);
@@ -181,7 +244,7 @@ int curl_post_call( char *payload, MenuType menu_type ) {
       response.ptr = NULL;
       return FAILURE;
     }
-    result = curl_easy_perform(curl);
+    curl_easy_perform(curl);
     curl_easy_cleanup(curl);
     //TODO: add a payment check like the one below
     if( strcmp(response.ptr, "transaction inserted") == 0) {
@@ -627,6 +690,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
+  jq_fetch_accounts();
   show_main_screen();
   return 0;
 }
