@@ -32,6 +32,7 @@
 #define FAILURE 1
 
 #define MAX_PAYLOAD 500
+#define MAX_ACCOUNT_NAME_OWNER_LENGTH 100
 
 typedef enum {
     TRANSACTION_ACCOUNT_NAME_OWNER = 0,
@@ -131,41 +132,35 @@ int jq_fetch_accounts_count() {
   pclose(fp);
   //TODO: trim_whitespaces();
   value = parse_long(count);
-  //printf("%ld\n", value);
-  //sleep(5);
   return value;
 }
 
 void jq_fetch_accounts() {
   FILE *fp = NULL;
-  char path[100] = {0};
-  //long number_of_accounts = 0;
+  char account_name_owner[MAX_ACCOUNT_NAME_OWNER_LENGTH] = {0};
   long index = 0;
 
   account_list_size = jq_fetch_accounts_count();
   create_string_array(account_list_size);
-  //printf("%ld\n", number_of_accounts);
   fp = popen("curl -s -X GET 'http://localhost:8080/account/select/active' | jq '.[] | .accountNameOwner' | tr -d '\"'", "r");
   if (fp == NULL) {
     printf("Failed to run command\n");
     exit(1);
   }
 
-  while (fgets(path, sizeof(path), fp) != NULL) {
-    printf("%s", path);
-    snprintf(account_list[index], 100, "%s", path);
-    printf("r=%s", account_list[index]);
+  while (fgets(account_name_owner, sizeof(account_name_owner), fp) != NULL) {
+    snprintf(account_list[index], MAX_ACCOUNT_NAME_OWNER_LENGTH, "%s", account_name_owner);
     index++;
   }
   pclose(fp);
 }
 
 void create_string_array( long list_size ) {
-  long max_string_length = 100;
+  //long max_string_length = 100;
 
   account_list = calloc(list_size, sizeof(char*));
   for ( int idx = 0; idx < list_size; idx++ ) {
-    account_list[idx] = calloc((max_string_length + 1), sizeof(char));
+    account_list[idx] = calloc((MAX_ACCOUNT_NAME_OWNER_LENGTH + 1), sizeof(char));
   }
 }
 
