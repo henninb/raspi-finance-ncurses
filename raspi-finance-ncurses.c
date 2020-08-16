@@ -71,8 +71,8 @@ typedef enum {
 } MenuType;
 
 typedef struct {
-    char *ptr;
-    size_t len;
+  char *ptr;
+  size_t len;
 } String;
 
 //TODO: menu_list make that enum?
@@ -80,6 +80,13 @@ static const char *menu_list[] = {"transaction", "payment", "quit"};
 
 char **account_list = NULL;
 long account_list_size = 0L;
+
+typedef struct {
+  char **account_list;
+  size_t size;
+} AccountList;
+
+AccountList *account_list_new = NULL;
 
 //TODO: eradicate these global vars
 static FORM *form = NULL;
@@ -156,7 +163,8 @@ void jq_fetch_accounts() {
 }
 
 void create_string_array( long list_size ) {
-  //long max_string_length = 100;
+  //TODO: create an instance of tye structure
+  //account_list_new = calloc()
 
   account_list = calloc(list_size, sizeof(char*));
   for ( int idx = 0; idx < list_size; idx++ ) {
