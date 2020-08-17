@@ -555,7 +555,7 @@ void show_payment_insert_screen() {
 
     set_payment_default_values();
 
-    for( int idx = 0; idx < 3; idx++ ) {
+    for( int idx = 0; idx < MAX_PAYMENT; idx++ ) {
       set_field_opts(fields[idx * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
       set_field_opts(fields[idx * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
       set_field_back(fields[idx * 2 + 1], A_UNDERLINE);
@@ -610,7 +610,7 @@ void show_reoccurring_insert_screen() {
 
     set_reoccurring_default_values();
 
-    for( int idx = 0; idx < 3; idx++ ) {
+    for( int idx = 0; idx < MAX_REOCCURRING; idx++ ) {
       set_field_opts(fields[idx * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
       set_field_opts(fields[idx * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
       set_field_back(fields[idx * 2 + 1], A_UNDERLINE);
