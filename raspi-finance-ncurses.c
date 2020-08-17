@@ -56,16 +56,18 @@ typedef enum {
 } PaymentIndex;
 
 typedef enum {
-    MENU_TRANSACTION = 0,
-    MENU_PAYMENT,
-    MENU_QUIT,
+    REOCCURRING_GUID = 0,
+    REOCCURRING_TRANSACTION_DATE,
+    REOCCURRING_AMOUNT,
 
-    MAX_MENU
-} MenuIndex;
+    MAX_REOCCURRING
+} ReoccurringIndex;
 
 typedef enum {
     MENU_TYPE_TRANSACTION = 0,
     MENU_TYPE_PAYMENT,
+    MENU_TYPE_REOCCURRING,
+    MENU_TYPE_QUIT,
 
     MAX_MENU_TYPE
 } MenuType;
@@ -76,7 +78,7 @@ typedef struct {
 } String;
 
 //TODO: menu_list make that enum?
-static const char *menu_list[] = {"transaction", "payment", "quit"};
+static const char *menu_list[] = {"transaction", "payment", "reoccurring", "quit"};
 
 char **account_list = NULL;
 long account_list_size = 0L;
@@ -112,6 +114,7 @@ int curl_post_call( char *, MenuType );
 int payment_json_generated();
 int transaction_json_generated();
 void create_string_array( long );
+void show_reoccurring_insert_screen();
 
 long parse_long(const char *str) {
     errno = 0;
@@ -316,6 +319,20 @@ void set_payment_default_values() {
     set_field_buffer(fields[PAYMENT_ACCOUNT_NAME_OWNER * 2 + 1], 0, "");
 }
 
+void set_reoccurring_default_values() {
+    char today_string[30] = {0};
+    time_t now = time(NULL);
+
+    strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", localtime(&now));
+
+    set_field_buffer(fields[REOCCURRING_TRANSACTION_DATE * 2], 0, TRANSACTION_DATE);
+    set_field_buffer(fields[REOCCURRING_TRANSACTION_DATE * 2 + 1], 0, today_string);
+    set_field_buffer(fields[REOCCURRING_AMOUNT * 2], 0, AMOUNT);
+    set_field_buffer(fields[REOCCURRING_AMOUNT * 2 + 1], 0, "0.00");
+    set_field_buffer(fields[REOCCURRING_GUID * 2], 0, GUID);
+    set_field_buffer(fields[REOCCURRING_GUID * 2 + 1], 0, "");
+}
+
 int transaction_json_generated() {
     char payload[MAX_PAYLOAD] = {0};
     uuid_t binuuid;
@@ -427,6 +444,10 @@ void driver_screens( int ch, MenuType menu_type ) {
                 if( payment_json_generated() == SUCCESS ) {
                   set_payment_default_values();
                 }
+            } else if( menu_type == MENU_TYPE_PAYMENT ) {
+                //if( payment_json_generated() == SUCCESS ) {
+                  set_reoccurring_default_values();
+                //}
             }
 
             refresh();
@@ -487,8 +508,12 @@ void cleanup_screen( MenuType menu_type ) {
         free_field(fields[idx]);
         fields[idx] = NULL;
       }
+    } else if( menu_type == MENU_TYPE_REOCCURRING ) {
+      for( int idx = 0; idx < MAX_REOCCURRING * 2; idx++ ) {
+        free_field(fields[idx]);
+        fields[idx] = NULL;
+      }
     } else {
-
     }
 
     delwin(main_window);
@@ -548,6 +573,61 @@ void show_payment_insert_screen() {
     }
 
   cleanup_screen(MENU_TYPE_PAYMENT);
+  show_main_screen();
+}
+
+void show_reoccurring_insert_screen() {
+    int ch = 0;
+    int label_length = 16;
+    int text_length = 40;
+    initscr();
+    noecho();
+    cbreak();
+    keypad(stdscr, TRUE);
+
+    win_body = newwin(24, 80, 0, 0);
+    assert(win_body != NULL);
+    box(win_body, 0, 0);
+    main_window = derwin(win_body, 20, 78, 3, 1);
+    assert(main_window != NULL);
+    box(main_window, 0, 0);
+    curs_set(1);
+    mvwprintw(win_body, 1, 2, "Press ESC to quit; F2 to save; F4/F5 back/forward account");
+
+    for( int idx = 0; idx < MAX_REOCCURRING; idx++ ) {
+        fields[idx * 2] = new_field(1, label_length, idx * 2, 0, 0, 0);
+        fields[idx * 2 + 1] = new_field(1, text_length, idx * 2, label_length + 1, 0, 0);
+    }
+
+    fields[MAX_REOCCURRING * 2] = NULL;
+
+    for( int idx = 0; idx < MAX_REOCCURRING * 2; idx++ ) {
+      assert(fields[idx] != NULL);
+    }
+
+    set_reoccurring_default_values();
+
+    for( int idx = 0; idx < 3; idx++ ) {
+      set_field_opts(fields[idx * 2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
+      set_field_opts(fields[idx * 2 + 1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
+      set_field_back(fields[idx * 2 + 1], A_UNDERLINE);
+    }
+
+    form = new_form(fields);
+    assert(form != NULL);
+    set_form_win(form, main_window);
+    set_form_sub(form, derwin(main_window, 18, 76, 1, 1));
+    post_form(form);
+
+    refresh();
+    wrefresh(win_body);
+    wrefresh(main_window);
+
+    while ((ch = getch()) != 27) { //escape = 27
+        driver_screens(ch, MENU_TYPE_REOCCURRING);
+    }
+
+  cleanup_screen(MENU_TYPE_REOCCURRING);
   show_main_screen();
 }
 
@@ -646,21 +726,29 @@ void show_main_screen() {
                 idx = ( idx < 0 ) ? (menu_list_size-1) : idx;
                 break;
             case '\n':
-                if( idx == 0 ) {
+                if( idx == MENU_TYPE_TRANSACTION ) {
                     wclear(main_window);
                     delwin(main_window);
                     endwin();
                     show_transaction_insert_screen();
                 }
 
-                if( idx == 1 ) {
+                if( idx == MENU_TYPE_PAYMENT ) {
                     wclear(main_window);
                     delwin(main_window);
                     endwin();
                     show_payment_insert_screen();
                 }
 
-                if( idx == 2 ) {
+                if( idx == MENU_TYPE_REOCCURRING ) {
+                    wclear(main_window);
+                    delwin(main_window);
+                    endwin();
+                    show_reoccurring_insert_screen();
+                }
+
+
+                if( idx == MENU_TYPE_QUIT ) {
                   wclear(main_window);
                   delwin(main_window);
                   endwin();
