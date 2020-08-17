@@ -28,6 +28,8 @@
 #define TRANSACTION_INSERT_URL "http://localhost:8080/transaction/insert"
 #define PAYMENT_INSERT_URL "http://localhost:8080/payment/insert"
 
+#define ESCAPE_CHAR 27
+
 #define SUCCESS 0
 #define FAILURE 1
 
@@ -571,7 +573,7 @@ void show_payment_insert_screen() {
     wrefresh(win_body);
     wrefresh(main_window);
 
-    while ((ch = getch()) != 27) { //escape = 27
+    while ((ch = getch()) != ESCAPE_CHAR) {
         driver_screens(ch, MENU_TYPE_PAYMENT);
     }
 
@@ -626,7 +628,7 @@ void show_reoccurring_insert_screen() {
     wrefresh(win_body);
     wrefresh(main_window);
 
-    while ((ch = getch()) != 27) { //escape = 27
+    while ((ch = getch()) != ESCAPE_CHAR) {
         driver_screens(ch, MENU_TYPE_REOCCURRING);
     }
 
@@ -681,7 +683,7 @@ void show_transaction_insert_screen() {
     wrefresh(win_body);
     wrefresh(main_window);
 
-    while ((ch = getch()) != 27) { //escape = 27
+    while ((ch = getch()) != ESCAPE_CHAR) {
         driver_screens(ch, MENU_TYPE_TRANSACTION);
     }
 
@@ -719,7 +721,7 @@ void show_main_screen() {
     curs_set(0); // hide the default screen cursor.
 
     ch = wgetch(main_window);
-    while( ch != 27 ) {
+    while( ch != ESCAPE_CHAR ) {
         snprintf(item, sizeof(item), "%s",  menu_list[idx]);
         mvwprintw(main_window, idx + 1, 2, "%s", item );
         switch( ch ) {
