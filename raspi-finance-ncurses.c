@@ -396,21 +396,24 @@ int payment_json_generated() {
 void account_name_rotate_backward( int idx ) {
    //int account_list_size = sizeof(account_list)/sizeof(char *);
 
-   set_field_buffer(fields[idx * 2 + 1], 0, "");
-   /* idx--; */
-   /* idx = ( idx < 0 ) ? (menu_list_size-1) : idx; */
-
-   current_account_list_index = (current_account_list_index > 0 ) ? current_account_list_index - 1 : account_list_size - 1;
-   set_field_buffer(fields[idx * 2 + 1], 0, account_list[current_account_list_index % account_list_size]);
+   if( account_list_size > 0 ) {
+       set_field_buffer(fields[idx * 2 + 1], 0, "");
+       /* idx--; */
+       /* idx = ( idx < 0 ) ? (menu_list_size-1) : idx; */
+       current_account_list_index = (current_account_list_index > 0 ) ? current_account_list_index - 1 : account_list_size - 1;
+       set_field_buffer(fields[idx * 2 + 1], 0, account_list[current_account_list_index % account_list_size]);
+   }
 }
 
 void account_name_rotate_forward( int idx ) {
     //int account_list_size = sizeof(account_list)/sizeof(char *);
 
-    /* idx++; */
-    /* idx = ( idx > (menu_list_size-1) ) ? 0 : idx; */
-    set_field_buffer(fields[idx * 2 + 1], 0, "");
-    set_field_buffer(fields[idx * 2 + 1], 0, account_list[++current_account_list_index % account_list_size]);
+    if( account_list_size > 0 ) {
+        /* idx++; */
+        /* idx = ( idx > (menu_list_size-1) ) ? 0 : idx; */
+        set_field_buffer(fields[idx * 2 + 1], 0, "");
+        set_field_buffer(fields[idx * 2 + 1], 0, account_list[++current_account_list_index % account_list_size]);
+    }
 }
 
 void driver_screens( int ch, MenuType menu_type ) {
