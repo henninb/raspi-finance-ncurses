@@ -24,9 +24,12 @@
 #define ACCOUNT_TYPE "accountType"
 #define DATE_UPDATED "dateUpdated"
 #define DATE_ADDED "dateAdded"
+#define SPECIFIC_DAY "specificDay"
+#define MONTH_END "monthEnd"
 
 #define TRANSACTION_INSERT_URL "http://localhost:8080/transaction/insert"
 #define PAYMENT_INSERT_URL "http://localhost:8080/payment/insert"
+#define REOCCURRING_CLONE_URL "http://localhost:8080/transaction/clone"
 
 #define ESCAPE_CHAR 27
 
@@ -59,8 +62,9 @@ typedef enum {
 
 typedef enum {
     REOCCURRING_GUID = 0,
-    REOCCURRING_TRANSACTION_DATE,
+    REOCCURRING_SPECIFIC_DAY,
     REOCCURRING_AMOUNT,
+    REOCCURRING_MONTH_END,
 
     MAX_REOCCURRING
 } ReoccurringIndex;
@@ -117,6 +121,7 @@ int payment_json_generated();
 int transaction_json_generated();
 void create_string_array( long );
 void show_reoccurring_insert_screen();
+int reoccurring_json_generated();
 
 long parse_long(const char *str) {
     errno = 0;
@@ -219,11 +224,11 @@ size_t write_response_to_string( void *ptr, size_t size, size_t nmemb, String *s
   }
 
   //TODO: should I use snprintf
-  memcpy(s->ptr+s->len, ptr, size*nmemb);
+  memcpy(s->ptr+s->len, ptr, size * nmemb);
   s->ptr[new_len] = '\0';
   s->len = new_len;
 
-  return size*nmemb;
+  return size * nmemb;
 }
 
 int curl_post_call( char *payload, MenuType menu_type ) {
@@ -248,6 +253,9 @@ int curl_post_call( char *payload, MenuType menu_type ) {
     } else if( menu_type == MENU_TYPE_PAYMENT ) {
       curl_easy_setopt(curl, CURLOPT_URL, PAYMENT_INSERT_URL);
       printw("payment:");
+    } else if( menu_type == MENU_TYPE_REOCCURRING ) {
+      curl_easy_setopt(curl, CURLOPT_URL, REOCCURRING_CLONE_URL);
+      printw("reoccurring:");
     } else {
       printw("invalid type.");
       free(response.ptr);
@@ -322,17 +330,14 @@ void set_payment_default_values() {
 }
 
 void set_reoccurring_default_values() {
-    char today_string[30] = {0};
-    time_t now = time(NULL);
-
-    strftime(today_string, sizeof(today_string)-1, "%Y-%m-%dT12:00:00.000", localtime(&now));
-
-    set_field_buffer(fields[REOCCURRING_TRANSACTION_DATE * 2], 0, TRANSACTION_DATE);
-    set_field_buffer(fields[REOCCURRING_TRANSACTION_DATE * 2 + 1], 0, today_string);
+    set_field_buffer(fields[REOCCURRING_SPECIFIC_DAY * 2], 0, SPECIFIC_DAY);
+    set_field_buffer(fields[REOCCURRING_SPECIFIC_DAY * 2 + 1], 0, "1");
     set_field_buffer(fields[REOCCURRING_AMOUNT * 2], 0, AMOUNT);
     set_field_buffer(fields[REOCCURRING_AMOUNT * 2 + 1], 0, "0.00");
     set_field_buffer(fields[REOCCURRING_GUID * 2], 0, GUID);
     set_field_buffer(fields[REOCCURRING_GUID * 2 + 1], 0, "");
+    set_field_buffer(fields[REOCCURRING_MONTH_END * 2], 0, MONTH_END);
+    set_field_buffer(fields[REOCCURRING_MONTH_END * 2 + 1], 0, "false");
 }
 
 int transaction_json_generated() {
@@ -368,6 +373,38 @@ int transaction_json_generated() {
     int result = curl_post_call(payload, MENU_TYPE_TRANSACTION);
     //wclear(win_body);
     //printw("%s", payload);
+    return result;
+}
+
+int reoccurring_json_generated() {
+    char payload[MAX_PAYLOAD] = {0};
+    strncat(payload, "{\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, GUID, MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\":", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, extract_field(fields[REOCCURRING_GUID * 2 + 1]), MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\",", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, SPECIFIC_DAY, MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\":", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, extract_field(fields[REOCCURRING_SPECIFIC_DAY * 2 + 1]), MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\",", MAX_PAYLOAD - strlen(payload) - 1);
+
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, AMOUNT, MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\":", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, extract_field(fields[REOCCURRING_AMOUNT * 2 + 1]), MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, ",", MAX_PAYLOAD - strlen(payload) - 1);
+
+    strncat(payload, "\"", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, MONTH_END, MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "\":", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, extract_field(fields[REOCCURRING_MONTH_END * 2 + 1]), MAX_PAYLOAD - strlen(payload) - 1);
+    //strncat(payload, "\"}", MAX_PAYLOAD - strlen(payload) - 1);
+    strncat(payload, "}", MAX_PAYLOAD - strlen(payload) - 1);
+    int result = curl_post_call(payload, MENU_TYPE_REOCCURRING);
+    printw("%s", payload);
     return result;
 }
 
@@ -425,6 +462,7 @@ void driver_screens( int ch, MenuType menu_type ) {
               account_name_rotate_backward(TRANSACTION_ACCOUNT_NAME_OWNER);
             } else if( menu_type == MENU_TYPE_PAYMENT ) {
               account_name_rotate_backward(PAYMENT_ACCOUNT_NAME_OWNER);
+            } else if( menu_type == MENU_TYPE_REOCCURRING ) {
             }
 
         break;
@@ -433,6 +471,7 @@ void driver_screens( int ch, MenuType menu_type ) {
               account_name_rotate_forward(TRANSACTION_ACCOUNT_NAME_OWNER);
             } else if( menu_type == MENU_TYPE_PAYMENT ) {
               account_name_rotate_forward(PAYMENT_ACCOUNT_NAME_OWNER);
+            } else if( menu_type == MENU_TYPE_REOCCURRING ) {
             }
         break;
         case KEY_F(2):
@@ -449,10 +488,10 @@ void driver_screens( int ch, MenuType menu_type ) {
                 if( payment_json_generated() == SUCCESS ) {
                   set_payment_default_values();
                 }
-            } else if( menu_type == MENU_TYPE_PAYMENT ) {
-                //if( payment_json_generated() == SUCCESS ) {
+            } else if( menu_type == MENU_TYPE_REOCCURRING ) {
+                if( reoccurring_json_generated() == SUCCESS ) {
                   set_reoccurring_default_values();
-                //}
+                }
             }
 
             refresh();
