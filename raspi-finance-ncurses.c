@@ -27,9 +27,9 @@
 #define SPECIFIC_DAY "specificDay"
 #define MONTH_END "monthEnd"
 
-#define TRANSACTION_INSERT_URL "http://localhost:8080/transaction/insert"
-#define PAYMENT_INSERT_URL "http://localhost:8080/payment/insert"
-#define REOCCURRING_CLONE_URL "http://localhost:8080/transaction/clone"
+#define TRANSACTION_INSERT_URL "https://hornsup:8080/transaction/insert"
+#define PAYMENT_INSERT_URL "https://hornsup:8080/payment/insert"
+#define REOCCURRING_CLONE_URL "https://hornsup:8080/transaction/clone"
 
 #define ESCAPE_CHAR 27
 
@@ -139,7 +139,7 @@ int jq_fetch_accounts_count() {
   char count[10] = {0};
   long value = 0;
 
-  fp = popen("curl -s -X GET 'http://localhost:8080/account/select/active' | jq '.[] | .accountNameOwner' | wc -l", "r");
+  fp = popen("curl -s --cacert hornsup-raspi-finance-cert.pem -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | .accountNameOwner' | wc -l", "r");
   if (fp == NULL) {
     printf("Failed to run command\n");
     exit(1);
@@ -159,7 +159,7 @@ void jq_fetch_accounts() {
 
   account_list_size = jq_fetch_accounts_count();
   create_string_array(account_list_size);
-  fp = popen("curl -s -X GET 'http://localhost:8080/account/select/active' | jq '.[] | .accountNameOwner' | tr -d '\"'", "r");
+  fp = popen("curl -s --cacert hornsup-raspi-finance-cert.pem -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | .accountNameOwner' | tr -d '\"'", "r");
   if (fp == NULL) {
     printf("Failed to run command\n");
     exit(1);
@@ -236,6 +236,8 @@ int curl_post_call( char *payload, MenuType menu_type ) {
     //CURLcode result;
     struct curl_slist *headers = NULL;
     String response = {0};
+    char *certFileName = "hornsup-raspi-finance-cert.pem";
+    char *keyFileName = "hornsup-raspi-finance-key.pem";
     init_string(&response);
 
     headers = curl_slist_append(headers, "Accept: application/json");
@@ -246,6 +248,8 @@ int curl_post_call( char *payload, MenuType menu_type ) {
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(curl, CURLOPT_SSLCERT, certFileName);
+    curl_easy_setopt(curl, CURLOPT_SSLKEY, keyFileName);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response_to_string);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     if( menu_type == MENU_TYPE_TRANSACTION ) {
