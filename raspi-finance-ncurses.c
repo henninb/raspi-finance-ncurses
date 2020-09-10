@@ -245,6 +245,7 @@ int curl_post_call( char *payload, MenuType menu_type ) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response_to_string);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     if( menu_type == MENU_TYPE_TRANSACTION ) {
