@@ -1,5 +1,6 @@
 #!/bin/sh
 
+#curl -k .curlrc
 mkdir -p ssl
 ctags -R *.c
 cppcheck --enable=all --suppress=missingIncludeSystem raspi-finance-ncurses.c
