@@ -11,6 +11,7 @@
 #include <uuid/uuid.h>
 #include <cjson/cJSON.h>
 #include <errno.h>
+#include <unistd.h>
 
 #define TRANSACTION_DATE "transactionDate"
 #define ACCOUNT_NAME_OWNER "accountNameOwner"
@@ -22,6 +23,7 @@
 #define GUID "guid"
 #define REOCCURRING "reoccurring"
 #define ACCOUNT_TYPE "accountType"
+#define ACTIVE_STATUS "activeStatus"
 #define DATE_UPDATED "dateUpdated"
 #define DATE_ADDED "dateAdded"
 #define SPECIFIC_DAY "specificDay"
@@ -139,7 +141,7 @@ int jq_fetch_accounts_count() {
   char count[10] = {0};
   long value = 0;
 
-  fp = popen("curl -s --cacert hornsup-raspi-finance-cert.pem -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | .accountNameOwner' | wc -l", "r");
+  fp = popen("curl -s --cacert ssl/hornsup-raspi-finance-cert.pem -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | select(.accountType==\"credit\") | .accountNameOwner' | wc -l", "r");
   if (fp == NULL) {
     printf("Failed to run command\n");
     exit(1);
@@ -159,7 +161,8 @@ void jq_fetch_accounts() {
 
   account_list_size = jq_fetch_accounts_count();
   create_string_array(account_list_size);
-  fp = popen("curl -s --cacert hornsup-raspi-finance-cert.pem -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | .accountNameOwner' | tr -d '\"'", "r");
+  //jq '.[] | select(.location=="Stockholm")
+  fp = popen("curl -s --cacert ssl/hornsup-raspi-finance-cert.pem -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | select(.accountType==\"credit\") | .accountNameOwner' | tr -d '\"'", "r");
   if (fp == NULL) {
     printf("Failed to run command\n");
     exit(1);
@@ -236,8 +239,7 @@ int curl_post_call( char *payload, MenuType menu_type ) {
     //CURLcode result;
     struct curl_slist *headers = NULL;
     String response = {0};
-    char *certFileName = "hornsup-raspi-finance-cert.pem";
-    /* char *keyFileName = "hornsup-raspi-finance-key.pem"; */
+    char *certFileName = "ssl/hornsup-raspi-finance-cert.pem";
     init_string(&response);
 
     headers = curl_slist_append(headers, "Accept: application/json");
@@ -369,6 +371,7 @@ int transaction_json_generated() {
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, extract_field(fields[TRANSACTION_ACCOUNT_TYPE * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":false,", REOCCURRING);
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":true,", ACTIVE_STATUS);
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
     snprintf(payload + strlen(payload), sizeof(payload), "}");
 
