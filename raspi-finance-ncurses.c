@@ -141,7 +141,8 @@ int jq_fetch_accounts_count() {
   char count[10] = {0};
   long value = 0;
 
-  fp = popen("curl -s --cacert ssl/hornsup-raspi-finance-cert.pem -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | select(.accountType==\"credit\") | .accountNameOwner' | wc -l", "r");
+  //fp = popen("curl -s --cacert ssl/hornsup-raspi-finance-cert.pem -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | select(.accountType==\"credit\") | .accountNameOwner' | wc -l", "r");
+  fp = popen("curl -s -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | select(.accountType==\"credit\") | .accountNameOwner' | wc -l", "r");
   if (fp == NULL) {
     printf("Failed to run command\n");
     exit(1);
@@ -161,8 +162,8 @@ void jq_fetch_accounts() {
 
   account_list_size = jq_fetch_accounts_count();
   create_string_array(account_list_size);
-  //jq '.[] | select(.location=="Stockholm")
-  fp = popen("curl -s --cacert ssl/hornsup-raspi-finance-cert.pem -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | select(.accountType==\"credit\") | .accountNameOwner' | tr -d '\"'", "r");
+  //fp = popen("curl -s --cacert ssl/hornsup-raspi-finance-cert.pem -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | select(.accountType==\"credit\") | .accountNameOwner' | tr -d '\"'", "r");
+  fp = popen("curl -s -X GET 'https://hornsup:8080/account/select/active' | jq '.[] | select(.accountType==\"credit\") | .accountNameOwner' | tr -d '\"'", "r");
   if (fp == NULL) {
     printf("Failed to run command\n");
     exit(1);
