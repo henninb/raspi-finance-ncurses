@@ -237,7 +237,7 @@ int curl_post_call( char *payload, MenuType menu_type ) {
     struct curl_slist *headers = NULL;
     String response = {0};
     char *certFileName = "hornsup-raspi-finance-cert.pem";
-    char *keyFileName = "hornsup-raspi-finance-key.pem";
+    /* char *keyFileName = "hornsup-raspi-finance-key.pem"; */
     init_string(&response);
 
     headers = curl_slist_append(headers, "Accept: application/json");
@@ -247,9 +247,10 @@ int curl_post_call( char *payload, MenuType menu_type ) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSLCERT, certFileName);
-    curl_easy_setopt(curl, CURLOPT_SSLKEY, keyFileName);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1L);
+    curl_easy_setopt(curl, CURLOPT_CAINFO, certFileName);
+    /* curl_easy_setopt(curl, CURLOPT_SSLCERT, certFileName); */
+    /* curl_easy_setopt(curl, CURLOPT_SSLKEY, keyFileName); */
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response_to_string);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     if( menu_type == MENU_TYPE_TRANSACTION ) {
@@ -275,16 +276,16 @@ int curl_post_call( char *payload, MenuType menu_type ) {
       free(response.ptr);
       response.ptr = NULL;
       return SUCCESS;
-    } else if( strcmp(response.ptr, "payment inserted") == 0) {
+    } else if(strcmp(response.ptr, "payment inserted") == 0) {
       printw("200 - SUCCESS\n");
       free(response.ptr);
       response.ptr = NULL;
       return SUCCESS;
     } else {
       if( response.len > 0) {
-        printw("curl - %s\n", response.ptr);
+        printw("failure: %s\n", response.ptr);
       } else {
-        printw("failed to connect.");
+        printw("connect failed: ");
       }
       free(response.ptr);
       response.ptr = NULL;
