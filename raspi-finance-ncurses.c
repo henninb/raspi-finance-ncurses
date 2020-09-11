@@ -249,7 +249,7 @@ int curl_post_call( char *payload, MenuType menu_type ) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
     curl_easy_setopt(curl, CURLOPT_CAINFO, certFileName);
     /* curl_easy_setopt(curl, CURLOPT_SSLCERT, certFileName); */
     /* curl_easy_setopt(curl, CURLOPT_SSLKEY, keyFileName); */
