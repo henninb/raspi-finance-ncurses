@@ -22,6 +22,7 @@
 #define NOTES "notes"
 #define GUID "guid"
 #define REOCCURRING "reoccurring"
+#define REOCCURRING_TYPE "reoccurringType"
 #define ACCOUNT_TYPE "accountType"
 #define ACTIVE_STATUS "activeStatus"
 #define DATE_UPDATED "dateUpdated"
@@ -372,6 +373,7 @@ int transaction_json_generated() {
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_TYPE, extract_field(fields[TRANSACTION_ACCOUNT_TYPE * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\",", ACCOUNT_NAME_OWNER, extract_field(fields[TRANSACTION_ACCOUNT_NAME_OWNER * 2 + 1]));
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":false,", REOCCURRING);
+    snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"undefined\",", REOCCURRING_TYPE);
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":true,", ACTIVE_STATUS);
     snprintf(payload + strlen(payload), sizeof(payload), "\"%s\":\"%s\"", GUID, uuid);
     snprintf(payload + strlen(payload), sizeof(payload), "}");
